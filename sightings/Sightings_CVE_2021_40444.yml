@@ -1,0 +1,148 @@
+---
+header:
+  sightingReportId: 5b0254ce-bf9f-4b00-b272-0bd96d114de2
+  status: wip
+  description: Threat Sighting for CVE-2021-40444 (Microsoft MSHTML Remote Code Execution Vulnerability). Microsoft is investigating reports of a remote code execution vulnerability in MSHTML that affects Microsoft Windows. Microsoft is aware of targeted attacks that attempt to exploit this vulnerability by using specially-crafted Microsoft Office documents.
+  author: Alejandro Houspanossian (@lekz86)
+  acknowledgement: Kevin Beaumont (@GossiTheDog)
+  tlp: white
+  threatInformation:
+    adversary:
+    - n/d
+    malware:
+    - n/d
+    tools:
+    - n/d
+    lolbas:
+    - Winword.exe
+    - excel.exe
+    - powerpnt.exe
+    - rundll32.exe
+    - control.exe
+    - Shell32.dll
+    country:
+    - n/d
+    industry:
+    - n/d
+    region:
+    - n/d
+threatSightings:
+  - sighting: Execution - User Execution. Weaponized office document.
+    id: 78119669-5deb-41e1-bae3-7d6623a4fabc
+    observables:   
+    - behavior: Winword drops DLL file masqueraded as INF file
+      id: 81676822-b170-4ea8-b010-7aaa35587d90
+      type: File Created      
+      parentProcess: 'C:\\Program Files (x86)\\Microsoft Office\\Office16\\WINWORD.EXE'
+      files:
+        - name: championship.inf
+          path: 'C:\\Users\\#{user}\\AppData\\Local\Temp\\championship.inf'
+          sha256: 6EEDF45CB91F6762DE4E35E36BCB03E5AD60CE9AC5A08CAEB7EDA035CD74762B
+          fileType: PE
+      notes:       
+      - Legit .INF files (aka Setup Information files) are a plain-text file used by Microsoft Windows for the installation of software and drivers.
+      att&ck:
+        execution:
+          - "T1204.002 - User Execution: Malicious File"  
+          - "T1203 - Exploitation for Client Execution"
+        commandAndControl:
+        - "T1105 - Ingress tool transfer"
+        defenseEvasion:
+        - "T1036 - Masquerading"
+    - behavior: Winword spawns control.exe to execute masqueraded DLL
+      id: dc761f3a-fce2-409d-8976-6928056c792f
+      type: Process Created      
+      parentProcess: 'C:\\Program Files (x86)\\Microsoft Office\\Office16\\WINWORD.EXE'
+      process: C:\\Windows\\System32\\control.exe
+      cmdLine: 
+      - "'C:\\Windows\\System32\\control.exe' '.cpl:../../../AppData/Local/Temp/championship.inf'"
+      notes:       
+      - control.exe  is a part of the Microsoft Windows Operating System and offers access to the Microsoft Windows Control Panel.
+      - control.exe executes Control Panel items provided in the command-line
+      - Control Panel items are DLLs or executable (.exe) files that let users configure the environment of Windows. 
+      - Control Panel items are typically accessed by clicking an icon in the Control Panel.      
+      - Control Panel items file extensions is typically .cpl.
+      att&ck:
+        execution:
+        - "T1218.002 - Signed Binary Proxy Execution: Control Panel"
+    - behavior: control.exe spawns RUNDLL32 to execute masqueraded DLL via Shell32.dll
+      id: b76bbd49-83d3-4a90-93e2-3e4847c70a53 
+      type: Process Created      
+      parentProcess: 'C:\\Windows\\System32\\control.exe'
+      process: C:\\Windows\\System32\\rundll32.exe
+      cmdLine: 
+      - "'C:\\Windows\\system32\\rundll32.exe' Shell32.dll,Control_RunDLL '.cpl:../../../AppData/Local/Temp/championship.inf'"
+      notes:       
+      - Shell32.dll is a LOLBAS that can be abused to launch DLL payloads.
+      att&ck:
+        execution:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+threatHunting:
+  - query: Hunt for suspicious execution of control.exe (Winword-> control.exe -> inf file)
+    queryId: 0887e0e1-e67a-4e72-8d6e-2b567b3f8ed4
+    type: sigma
+    behaviorIds:
+    - dc761f3a-fce2-409d-8976-6928056c792f
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        selection:
+            ParentImage|endswith: 
+              - '\Winword.exe'
+              - '\excel.exe'
+              - '\powerpnt.exe'
+        selection2:
+            Image|endswith: 
+              - '\control.exe'
+            CommandLine|contains: 
+              - 'AppData/Local/Temp/'
+              - '.inf'
+              - '.dll'
+        condition: all of them
+  - query: Hunt for suspicious execution of control.exe spawning RUNDLL32 + Shell32.dll  
+    queryId: add0e36a-fdf3-4606-a75d-9f696897ca96
+    type: sigma  
+    behaviorIds:
+    - b76bbd49-83d3-4a90-93e2-3e4847c70a53
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        selection:
+            ParentImage|endswith: 
+              - '\control.exe'
+        selection2:
+            Image|endswith: 
+              - '\rundll32.exe'
+            CommandLine|contains|all: 
+              - 'Shell32.dll,Control_RunDLL'
+        condition: all of them
+  - query: Hunt for Winword dropping INF file.
+    queryId: 2afafde1-d374-4aea-85fe-f92a6aa26060
+    type: sigma
+    behaviorIds:
+    - 81676822-b170-4ea8-b010-7aaa35587d90
+    logsource:
+      category: file_event
+      product: windows
+    detection:
+        selection:
+            ParentImage|endswith: 
+              - '\Winword.exe'
+        selection2:
+            FileName|endswith:        
+              - '.inf'
+        condition: all of them
+footer:
+  changeTracking:
+    created: 2021-09-08
+    lastModified: 2021-11-03
+    sightingVersion: 1.4
+    schemaVersion: 1.6
+  references:
+    - https://www.joesandbox.com/analysis/476188/1/html
+    - https://msrc.microsoft.com/update-guide/vulnerability/CVE-2021-40444
+    - https://docs.microsoft.com/en-us/windows/win32/shell/executing-control-panel-items
+    - https://lolbas-project.github.io/lolbas/Libraries/Shell32/
+

