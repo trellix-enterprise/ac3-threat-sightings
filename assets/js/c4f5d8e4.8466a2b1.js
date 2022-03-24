@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunkac3_threat_sightings=self.webpackChunkac3_threat_sightings||[]).push([[4195],{2295:function(t,e,n){n.r(e),n.d(e,{default:function(){return a}});var c=n(7294),s=n(5977);function a(){return c.createElement(s.l_,{to:"/ac3-threat-sightings/docs/Welcome"})}}}]);
