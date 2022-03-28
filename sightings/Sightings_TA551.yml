@@ -225,7 +225,7 @@ threatSightings:
           process: 'C:\\Users\\#{user}\\AppData\\Local\\Temp\\jyheeckptwa.exe'
       att&ck:
         commandAndControl:
-        - "T1071 - Web Protocols"
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
     - behavior: Shellcode runner executed web payload (Cobalt Strike shellcode)
       id: 5e716824-7e45-4701-a8d0-836251093ca3
       type: Process Created
@@ -241,7 +241,7 @@ threatSightings:
       att&ck:
         commandAndControl:
         - "T1105 - Ingress Tool Transfer"
-        - "T1071 - Web Protocols"
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
 threatHunting:
   - query: Hunt for weaponized doc files from TA551 (SHATHAK)
     queryId: eebcd051-3210-4613-9867-3bd8d1558b32

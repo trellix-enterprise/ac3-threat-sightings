@@ -458,7 +458,7 @@ threatSightings:
         defenseEvasion:
         - "T1070.004 - Indicator Removal on Host: File Deletion"
         execution:
-        - "T1059 - Command and Scripting Interpreter: Windows Command Shell"
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
 threatHunting:
   - query: Hunt for delayed execution of DEL commands for Defense Evasion (T1070.004)
     queryId: a9379db9-6757-463c-acb9-9e7b26b55b95

@@ -515,7 +515,7 @@ threatSightings:
         privilegeEscalation:
         - "T1548.002 - Abuse Elevation Control Mechanism: Bypass User Account Control"
         - "T1112 - Modify Registry"
-        - "T1059.001 - PowerShell"
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
     - behavior: _RunDll32_ spawned CMD for multiple discovery commands.
       id: 66ee358c-fb1f-4551-a53d-41ee849d12bb
       type: Process Created
