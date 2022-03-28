@@ -241,7 +241,7 @@ threatSightings:
         - "T1016 - System Network Configuration Discovery"
         execution:
         - "T1059.001 - Command and Scripting Interpreter: PowerShell"
-  - sighting: Priviledge Escalation - Named Pipes Impersonation (Cobalt getSystem)
+  - sighting: Privilege Escalation - Named Pipes Impersonation (Cobalt getSystem)
     id: c57f5c01-1121-48fa-b934-105cf2df8082
     observables:
     - behavior: Priviledge Escalation via Named Pipes Impersonation (Cobalt getSystem)
@@ -333,8 +333,8 @@ threatHunting:
 footer:
   changeTracking:
     created: 2021-09-01
-    lastModified: 2021-11-18
-    sightingVersion: 1.7
+    lastModified: 2022-02-08
+    sightingVersion: 1.8
     schemaVersion: 1.6
   references:
     - https://nasbench.medium.com/what-is-the-dllhost-exe-process-actually-running-ef9fe4c19c08
