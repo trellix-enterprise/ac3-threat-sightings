@@ -450,7 +450,7 @@ threatSightings:
         - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
     - behavior: Created ransom notes
       type: File Created
-      weapon: darkside ransomware
+      weapon: adhoc-malware
       id: 1234da53-58c3-446d-88d1-10347b161234
       files:
         - name: README.[a-z0-9]{8}.TXT
