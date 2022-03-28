@@ -1,0 +1,516 @@
+{
+  "header": {
+    "sightingReportId": "18d129e7-7bad-43ae-be53-702c09635363",
+    "status": "wip",
+    "description": "Threat Sighting for BlackCat Ransomware TTPs based on internal research and external reports. BlackCat is written in Rust and promoted on Russian-speaking hacking forums. The ransomware-as-a-service (RaaS) pays affiliates depending on the size of the ransom payment. The malware is highly configurable, with the ability to use different encryption routines, spread between computers, kill virtual machines and ESXi VMs, and automatically wipe ESXi snapshots to prevent recovery. BlackCat uses a triple-extortion tactic where they steal data before encrypting devices and threat to publish the data if a ransom is not paid. As an additional extortion method, the threat actors threaten to DDoS victims until they pay a ransom. Source- Bleeping Computer.",
+    "author": "Alejandro Houspanossian (@lekz86)",
+    "acknowledgement": "Jason Hill @varonis, Symantec @threatintel",
+    "tlp": "white",
+    "threatInformation": {
+      "adversaries": [
+        "unknown"
+      ],
+      "malware": [
+        "BlackCat"
+      ],
+      "tools": [
+        "fsutil.exe",
+        "vssadmin.exe",
+        "reg.exe",
+        "ARP.exe",
+        "net.exe"
+      ],
+      "lolbas": [
+        "WMIC.exe"
+      ]
+    }
+  },
+  "threatSightings": [
+    {
+      "sighting": "Execution - BlackCat malware has used _CMSTPLUA_ COM interface UAC Bypass for Privilege Escalation.",
+      "id": "31747bf9-6155-4eab-b078-d82202607024",
+      "behaviors": [
+        {
+          "behavior": "_DLLHOST_ executed the _CMSTPLUA_ COM object.",
+          "id": "b2be8140-b8d0-46f5-a7e7-1eeb667789bb",
+          "type": "Process Created",
+          "weapon": "CMSTPLUA",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\dllhost.exe",
+              "cmdLine": [
+                "C:\\\\Windows\\\\SysWOW64\\\\DllHost.exe /Processid:{3E5FC7F9-9A51-4367-9063-A120244FBEC7}"
+              ],
+              "parentProcess": "n/d"
+            }
+          ],
+          "notes": [
+            "_DllHost.exe_ (aka _COM Surrogate_ aka _DLLHOST_) is part of Microsoft Windows.",
+            "With the _/Processid_ flag, _DLLHOST_ will execute the COM object referenced by 3E5FC7F9-9A51-4367-9063-A120244FBEC7.",
+            "3E5FC7F9-9A51-4367-9063-A120244FBEC7 corresponds to the _CMSTPLUA COM interface_.",
+            "_CMSTPLUA_ stands for Connection Manager Admin API Helper for Setup, and is part of the Microsoft Connection Manager Profile Installer (_CMSTP_)."
+          ],
+          "att&ck": {
+            "execution": [
+              "T1218.003 - Signed Binary Proxy Execution: CMSTP"
+            ]
+          }
+        },
+        {
+          "behavior": "DLLHOST (_CMSTPLUA_) spawned BlackCat malware with high integrity.",
+          "id": "816e7d55-a33d-475f-b4cc-7e40d3be274b",
+          "type": "Process Created",
+          "weapon": "blackcat",
+          "processes": [
+            {
+              "process": "C:\\\\Users\\\\#{user}\\\\Downloads\\\\customBlackCat.exe",
+              "cmdLine": [
+                "\\\"C:\\\\Users\\\\#{user}\\\\Downloads\\\\customBlackCat.exe\\\" \\\"--access-token\\\" \\\"123456\\\" \\\"-p\\\" \\\"c:\\\\Victim\\\""
+              ],
+              "parentProcess": "C:\\\\Windows\\\\SysWOW64\\\\dllhost.exe"
+            }
+          ],
+          "notes": [
+            "The _CMSTPLUA_ COM interface has a method called _ShellExec_ that can be abused to launch arbitrary commands as high integrity processes.",
+            "The _CMSTPLUA UAC Bypass_ will produce suspicious process execution started by _DLLHOST_ without prompting the user for confirmation."
+          ],
+          "att&ck": {
+            "privilegeEscalation": [
+              "T1548.002 - Abuse Elevation Control Mechanism: Bypass User Account Control"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Privilege Escalation - BlackCat malware has used _vssadmin.exe_ to delete Volume Shadow Copies for Impact.",
+      "id": "12395b7c-e33f-4fcc-baa8-36b1490538eb",
+      "behaviors": [
+        {
+          "behavior": "BlackCat launched _CMD_ for command execution.",
+          "id": "a862695b-3439-4dd1-a7a8-751045cb5f52",
+          "type": "Process Created",
+          "weapon": "blackcat",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\cmd.exe",
+              "cmdLine": [
+                "\\\"cmd\\\" /c \\\"vssadmin.exe delete shadows /all /quiet\\\""
+              ],
+              "parentProcess": "C:\\\\Users\\\\#{user}\\\\Downloads\\\\5746648689573888\\\\ransom-blackcat.exe"
+            }
+          ],
+          "notes": [
+            "_vssadmin.exe delete shadows /all /quiet_ is a common command executed by ransomware."
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        },
+        {
+          "behavior": "BlackCat executed _vssadmin.exe_ to delete all Windows Volume Shadow Copies on a system.",
+          "id": "c4239327-75dc-4684-8deb-84217b7beb83",
+          "type": "Process Created",
+          "weapon": "vssadmin",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\System32\\\\vssadmin.exe",
+              "cmdLine": [
+                "vssadmin.exe delete shadows /all /quiet"
+              ],
+              "parentProcess": "C:\\\\Windows\\\\SysWOW64\\\\cmd.exe"
+            }
+          ],
+          "notes": [
+            "_vssadmin.exe_ is Windows Volume Shadow Copy Service administrative tool.",
+            "Windows Volume Shadow Copy is a technology to create backups of computer files."
+          ],
+          "att&ck": {
+            "impact": [
+              "T1490 - Inhibit System Recovery"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Privilege Escalation - BlackCat malware has used _WMIC.exe_ to obtain system UUID for Discovery.",
+      "id": "67895b7c-e33f-4fcc-baa8-36b1490528eb",
+      "behaviors": [
+        {
+          "behavior": "BlackCat launched _CMD_ for command execution.",
+          "id": "cf9df384-ea24-46c7-ad91-440513701550",
+          "type": "Process Created",
+          "weapon": "blackcat",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\cmd.exe",
+              "cmdLine": [
+                "\\\"cmd\\\" /c \\\"wmic csproduct get UUID\\\""
+              ],
+              "parentProcess": "C:\\\\Users\\\\#{user}\\\\Downloads\\\\5746648689573888\\\\ransom-blackcat.exe"
+            }
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        },
+        {
+          "behavior": "_WMIC command_ executed to retrieve system UUID.",
+          "id": "09ee058e-a777-459c-8c73-22d66e04fca6",
+          "type": "Process Created",
+          "weapon": "wmic",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\wbem\\\\WMIC.exe",
+              "cmdLine": [
+                "wmic csproduct get UUID"
+              ],
+              "parentProcess": "C:\\\\Windows\\\\SysWOW64\\\\cmd.exe"
+            }
+          ],
+          "notes": [
+            "The command _wmic csproduct get UUID_ retrieves the universally unique identifier (UUID) of the target system.",
+            "_WMIC.exe_  is a command-line interface for Windows Management Instrumentation (WMI) technology",
+            "_WMI_ is a techonlogy for enterprise-scale manageability."
+          ],
+          "att&ck": {
+            "discovery": [
+              "T1082 - System Information Discovery"
+            ],
+            "execution": [
+              "T1047 - Windows Management Instrumentation"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Privilege Escalation - BlackCat malware has used _fsutil.exe_ to modifify symbolic link evaluation settings for Lateral Movement.",
+      "id": "20f95b7c-e33f-4fcc-baa8-36b1490538eb",
+      "behaviors": [
+        {
+          "behavior": "BlackCat launched _CMD_ for command execution.",
+          "id": "75ce0d7f-9b57-4614-a264-255d88ba9207",
+          "type": "Process Created",
+          "weapon": "blackcat",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\cmd.exe",
+              "cmdLine": [
+                "\\\"cmd\\\" /c \\\"fsutil behavior set SymlinkEvaluation R2L:1\\\""
+              ],
+              "parentProcess": "C:\\\\Users\\\\#{user}\\\\Downloads\\\\5746648689573888\\\\ransom-blackcat.exe"
+            }
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        },
+        {
+          "behavior": "_fsutil_ command executed to modify symbolic link evaluation settings.",
+          "id": "da4c5648-b638-4d27-a782-c5ecd6b1ab15",
+          "type": "Process Created",
+          "weapon": "fsutil",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\fsutil.exe",
+              "cmdLine": [
+                "fsutil behavior set SymlinkEvaluation R2L:1",
+                "fsutil behavior set SymlinkEvaluation R2R:1"
+              ],
+              "parentProcess": "C:\\\\Windows\\\\SysWOW64\\\\cmd.exe"
+            }
+          ],
+          "notes": [
+            "The First L o R -before the 2- refers location of the links",
+            "The Second L o R -after the 2- refers location of the target of the link",
+            "R2L means that you can access links located on a remote machine that point to targets on the same remote machine.",
+            "R2R means that you can access links located on a remote machine that point to remote targets of the remote machine."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1xxx - Modify Symbolic Links Evaluation configurations"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Privilege Escalation - BlackCat malware has used _reg.exe_ to modify SMB protocol implementation settings for Lateral Movement.",
+      "id": "e6ec1240-ce37-4766-80b4-d0d2f8aae601",
+      "behaviors": [
+        {
+          "behavior": "BlackCat launched _CMD_ for command execution.",
+          "id": "e23f0846-ecef-426c-a0b6-546ff6c0c2e3",
+          "type": "Process Created",
+          "weapon": "cmd",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\cmd.exe",
+              "cmdLine": [
+                "\\\"cmd\\\" /c \\\"reg add HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\LanmanServer\\\\Parameters /v MaxMpxCt /d 65535 /t REG_DWORD /f\\\""
+              ],
+              "parentProcess": "C:\\\\Users\\\\#{user}\\\\Downloads\\\\5746648689573888\\\\ransom-blackcat.exe"
+            }
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        },
+        {
+          "behavior": "_reg.exe add_ command executed to modify SMB protocol settings.",
+          "id": "66b30842-c548-42ed-bd7b-e3d5b55c9eb7",
+          "type": "Process Created",
+          "weapon": "reg",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\System32\\\\reg.exe",
+              "cmdLine": [
+                "reg add HKEY_LOCAL_MACHINE\\\\SYSTEM\\\\CurrentControlSet\\\\Services\\\\LanmanServer\\\\Parameters /v MaxMpxCt /d 65535 /t REG_DWORD /f"
+              ],
+              "parentProcess": "C:\\\\Windows\\\\SysWOW64\\\\cmd.exe"
+            }
+          ],
+          "notes": [
+            "LanmanServer is a Windows service that implements the server side of the Server Message Block (SMB) protocol.",
+            "MaxMpxCt specifies the maximum outstanding network requests for the server per client. 65535 is highest possible value."
+          ],
+          "att&ck": {
+            "lateralMovement": [
+              "T1021.001 - Remote Services: SMB/Windows Admin Shares"
+            ],
+            "defenseEvasion": [
+              "T1112 - Modify Registry"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Privilege Escalation - BlackCat malware has used _net.exe_ to mount remote drives for Lateral Movement.",
+      "id": "b96cf6e6-bd90-4e2e-802e-ddc14bc5759b",
+      "behaviors": [
+        {
+          "behavior": "BlackCat launched _CMD_ for command execution.",
+          "id": "ac16d588-20d9-43d9-93d0-4b712f965fc4",
+          "type": "Process Created",
+          "weapon": "blackcat",
+          "processes": [
+            {
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\cmd.exe",
+              "cmdLine": [
+                "\\\"cmd\\\" /c \\\"net use \\\\\\\\REMOTEDIR /user:Administrator password /persistent:no\\\""
+              ],
+              "parentProcess": "C:\\\\Users\\\\#{user}\\\\Downloads\\\\5746648689573888\\\\ransom-blackcat.exe"
+            }
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        },
+        {
+          "behavior": "_net use_ command executed to mount (unmmaped) remote drive.",
+          "id": "9862613b-10e8-4343-8e01-aa462514ff15",
+          "type": "Process Created",
+          "weapon": "net",
+          "processes": [
+            {
+              "cmdLine": [
+                "net use \\\\\\\\REMOTEDIR /user:Administrator password /persistent:no"
+              ],
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\net.exe",
+              "parentProcess": "C:\\\\Windows\\\\SysWOW64\\\\cmd.exe"
+            }
+          ],
+          "notes": [
+            "_net use_ command typically takes a drive as first parameter for further reference of the mounted drive.",
+            "if no drive letter is provided, the commands succeeds but the connected drive remains unmmaped.",
+            "not using a drive letter might be an unvoluntary ommision or a defense evasion technique."
+          ],
+          "att&ck": {
+            "lateralMovement": [
+              "T1021.002 - Remote Services: SMB/Windows Admin Shares",
+              "T1078 - Valid Accounts"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Privilege Escalation - BlackCat malware has used _Native API calls_ to enumerated network shares for Defense Evasion.",
+      "id": "7f8821d8-04d6-4e01-b86e-739c3dc74e13",
+      "behaviors": [
+        {
+          "behavior": "Enumerated network share via _NetShareEnum API_.",
+          "id": "dd3e4091-24dc-4c5e-a68a-a5fb01ca1853",
+          "type": "Api Invoked",
+          "weapon": "blackcat",
+          "apis": [
+            {
+              "apiName": "NetShareEnum"
+            }
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1106 - Native API"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Privilege Escalation - BlackCat malware has used _.sykffle file extension_ for _encrypted files_ for Impact.",
+      "id": "73d41301-77ae-4c44-a1ce-91f8d921d066",
+      "behaviors": [
+        {
+          "behavior": "BlackCat malware encrypts files (based on excusion lists)",
+          "id": "d9425aa3-585b-4deb-a9bf-1f097ba51651",
+          "type": "File Modified",
+          "weapon": "blackcat",
+          "files": [
+            {
+              "name": "RECOVER-sykffle-FILES.txt",
+              "path": "*\\\\RECOVER-sykffle-FILES.txt",
+              "sha256": "n/d",
+              "process": "C:\\\\Users\\\\#{user}\\\\Downloads\\\\customBlackCat.exe"
+            },
+            {
+              "name": "RECOVER-sykffle-FILES.txt.png",
+              "path": "*\\\\RECOVER-sykffle-FILES.txt.png",
+              "sha256": "n/d",
+              "process": "C:\\\\Users\\\\#{user}\\\\Downloads\\\\customBlackCat.exe"
+            }
+          ],
+          "notes": [
+            "RECOVER-sykffle-FILES.txt",
+            "RECOVER-sykffle-FILES.txt.png"
+          ],
+          "att&ck": {
+            "impact": [
+              "T1486 - Data Encrypted for Impact"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "threatHunting": [
+    {
+      "query": "Hunt for potential CMSTPLUA UAC bypass attempts.",
+      "queryId": "ec91781b-16a7-40bb-b052-1c5fb7d6e407",
+      "type": "sigma",
+      "behaviorIds": [
+        "b2be8140-b8d0-46f5-a7e7-1eeb667789bb",
+        "816e7d55-a33d-475f-b4cc-7e40d3be274b"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "CMSTPLUA_COM": {
+          "ParentImage|endswith": "\\\\dllhost.exe",
+          "ParentCommandLine|contains|all": [
+            "Processid",
+            "3E5FC7F9-9A51-4367-9063-A120244FBEC7"
+          ]
+        },
+        "child": {
+          "Image|endswith": ".exe"
+        },
+        "condition": "CMSTPLUA_COM AND child"
+      }
+    },
+    {
+      "query": "Hunt for mounted drives.",
+      "queryId": "123a49a8-768f-1237-8b63-3a7712356573",
+      "type": "sigma",
+      "behaviorIds": [
+        "ac16d588-20d9-43d9-93d0-4b712f965fc4",
+        "9862613b-10e8-4343-8e01-aa462514ff15"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "Image|endswith": "\\\\net.exe",
+          "CommandLine|contains|all": [
+            "net use ",
+            "user",
+            "persistent"
+          ]
+        },
+        "condition": "selection"
+      }
+    },
+    {
+      "query": "Hunt for SMB protocol settings modification.",
+      "queryId": "d1da49a8-768f-42e7-8b63-3a77cdd56573",
+      "type": "sigma",
+      "behaviorIds": [
+        "66b30842-c548-42ed-bd7b-e3d5b55c9eb7"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "Image|endswith": "\\\\fsutil.exe",
+          "CommandLine|contains|re": "reg add *LanmanServer\\\\Parameters *MaxMpxCt /d 65535 /t"
+        },
+        "condition": "selection"
+      }
+    },
+    {
+      "query": "Hunt for symbolic link evaluation settings modification.",
+      "queryId": "7297c0e4-ee3a-406e-b578-629177155b1d",
+      "type": "sigma",
+      "behaviorIds": [
+        "da4c5648-b638-4d27-a782-c5ecd6b1ab15"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "Image|endswith": "\\\\fsutil.exe",
+          "CommandLine|contains": [
+            "behavior set SymlinkEvaluation",
+            "R2R:1",
+            "R2L:1"
+          ]
+        },
+        "condition": "selection"
+      }
+    }
+  ],
+  "footer": {
+    "changeTracking": {
+      "created": "2021-02-07T00:00:00Z",
+      "lastModified": "2021-02-07T00:00:00Z",
+      "sightingVersion": 1,
+      "schemaVersion": 1.7
+    },
+    "references": [
+      "https://www.bleepingcomputer.com/news/security/alphv-blackcat-this-years-most-sophisticated-ransomware/",
+      "https://symantec-enterprise-blogs.security.com/blogs/threat-intelligence/noberus-blackcat-alphv-rust-ransomware",
+      "https://www.varonis.com/blog/alphv-blackcat-ransomware",
+      "https://cqureacademy.com/cqure-labs/cqlabs-how-uac-bypass-methods-really-work-by-adrian-denkiewicz"
+    ]
+  }
+}

