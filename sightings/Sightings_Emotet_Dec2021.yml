@@ -552,7 +552,7 @@ threatSightings:
       att&ck:
         execution:
         - "T1059.003 - Command and Scripting Interpreter: Windows Command Shell"
-        - "T1047 - WMI"
+        - "T1047 - Windows Management Instrumentation"
   - sighting: Command And Control - Threat actor used _WMIC via Cobalt Strike_ to list existing Volume Shadow Copies via _vssadmin.exe_ for Discovery.
     id: be6694e2-ca89-405e-9095-c3e137f6105d
     behaviors:
@@ -567,7 +567,7 @@ threatSightings:
         parentProcess: C:\\WINDOWS\\system32\\cmd.exe
       att&ck:
         execution:
-        - "T1047 - WMI"
+        - "T1047 - Windows Management Instrumentation"
   - sighting: Command And Control - Threat actor used HTTP connections for Command And Control.
     id: 1603e36c-1d13-4e4a-8e5b-ee5e7e82d639
     behaviors:
