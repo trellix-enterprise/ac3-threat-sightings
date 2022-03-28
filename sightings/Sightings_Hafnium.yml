@@ -248,7 +248,7 @@ threatSightings:
     - behavior: _CMD_ spawns _Procdump64_
       id: 123f14bc-5b94-4dd9-97ef-65d6f275b1b4
       type: Process Created
-      weapon: procdump64
+      weapon: procdump
       processes:
       - parentProcess: C:\\Windows\\System32\\inetsrv\\w3wp.exe
         process: C:\\Windows\\System32\\cmd.exe
